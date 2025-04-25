@@ -255,7 +255,8 @@ namespace SettingsEnhanced.Game.Settings
         [ConfigurationItem(
            name: "Display duty list",
            interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.DutyListDisp
+           controlOption: UiControlOption.DutyListDisp,
+           headerName: "Duty List"
         )]
         public bool HudDisplayDutyList { get; private set; }
 

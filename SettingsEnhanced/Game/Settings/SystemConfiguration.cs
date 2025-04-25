@@ -138,7 +138,7 @@ namespace SettingsEnhanced.Game.Settings
             name: "DualSense Speaker Volume",
             interfaceGroup: "Sound Settings",
             configOption: SystemConfigOption.SoundPad,
-            headerName: "Dualsense/DUALShock 4 Settings")]
+            headerName: "Dualsense/DUALSHOCK 4 Settings")]
         [ConfigurationInputRange(0, 100)]
         public uint DualSenseSpeakerVolume { get; private set; }
 

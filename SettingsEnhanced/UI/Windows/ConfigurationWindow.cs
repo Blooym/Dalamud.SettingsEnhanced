@@ -297,10 +297,13 @@ namespace SettingsEnhanced.UI.Windows
         {
             var configOptionAttribute = prop.GetCustomAttribute<TAttribute>();
             var displayName = configOptionAttribute?.InterfaceName ?? prop.Name;
-            if (configOptionAttribute?.Nested ?? false)
+
+            if (configOptionAttribute?.Nested == true)
             {
                 ImGui.Indent();
             }
+            this.DrawPropertyResetButton(configuration, prop);
+            ImGui.SameLine();
 
             if (prop.PropertyType.IsEnum)
                 this.DrawEnumProperty(configuration, prop, displayName);
@@ -311,7 +314,7 @@ namespace SettingsEnhanced.UI.Windows
             else if (prop.PropertyType == typeof(string))
                 this.DrawStringProperty(configuration, prop, displayName);
 
-            if (configOptionAttribute?.Nested ?? false)
+            if (configOptionAttribute?.Nested == true)
             {
                 ImGui.Unindent();
             }
@@ -353,13 +356,10 @@ namespace SettingsEnhanced.UI.Windows
                 }
             }
             ImGui.EndDisabled();
-            ImGui.SameLine();
         }
 
         private void DrawEnumProperty<T>(T configuration, PropertyInfo prop, string displayName) where T : IGameConfiguration<T>
         {
-            this.DrawPropertyResetButton(configuration, prop);
-
             var enumValues = Enum.GetValues(prop.PropertyType).Cast<Enum>().ToArray();
             var value = prop.GetValue(configuration) as Enum;
             if (value is null && ImGui.Selectable("None", value is null))
@@ -383,8 +383,6 @@ namespace SettingsEnhanced.UI.Windows
 
         private void DrawStringProperty<T>(T configuration, PropertyInfo prop, string displayName) where T : IGameConfiguration<T>
         {
-            this.DrawPropertyResetButton(configuration, prop);
-
             var range = prop.GetCustomAttribute<ConfigurationInputRangeAttribute>() ?? new(0, 100);
             var currentValue = (string)(prop.GetValue(configuration) ?? "");
             if (ImGui.InputText(displayName, ref currentValue, (uint)range.Max) && currentValue.Length > range.Min)
@@ -396,8 +394,6 @@ namespace SettingsEnhanced.UI.Windows
 
         private void DrawUintProperty<T>(T configuration, PropertyInfo prop, string displayName) where T : IGameConfiguration<T>
         {
-            this.DrawPropertyResetButton(configuration, prop);
-
             var range = prop.GetCustomAttribute<ConfigurationInputRangeAttribute>() ?? new(0, 100);
             var currentValue = (uint)(prop.GetValue(configuration) ?? 0);
             var refValue = (int)currentValue;
@@ -410,8 +406,6 @@ namespace SettingsEnhanced.UI.Windows
 
         private void DrawBoolProperty<T>(T configuration, PropertyInfo prop, string displayName) where T : IGameConfiguration<T>
         {
-            this.DrawPropertyResetButton(configuration, prop);
-
             var currentValue = (bool)(prop.GetValue(configuration) ?? false);
             if (ImGui.Checkbox(displayName, ref currentValue))
             {

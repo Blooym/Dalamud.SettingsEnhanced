@@ -80,6 +80,27 @@ namespace SettingsEnhanced.Game.Settings
             None = 2,
         }
 
+        public enum FlyTextSize
+        {
+            Standard = 0,
+            Large = 1,
+            Maximum = 2
+        }
+
+        public enum PopupTextSize
+        {
+            Standard = 0,
+            Large = 1,
+            Maximum = 2
+        }
+
+        public enum ServerClockType
+        {
+            DefaultToLanguage = 0,
+            TwentyFourHour = 1,
+            TwelveHour = 2,
+        }
+
 #pragma warning disable CS8618
         // Available Configuration Fields
         // Do not change the Property Name of these, it'll break a configuration file.
@@ -168,6 +189,235 @@ namespace SettingsEnhanced.Game.Settings
         )]
         public bool ShopConfirmRareItem { get; private set; }
 
+        [ConfigurationItem(
+            name: "Display Emote Log Message",
+            interfaceGroup: "Chat Settings",
+            configOption: UiConfigOption.EmoteTextType,
+            headerName: "Emotes"
+         )]
+        public bool EmoteDisplayLogMessage { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display flying text",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.FlyTextDisp,
+           headerName: "Text"
+        )]
+        public bool HudDisplayFlyingText { get; private set; }
+
+        [ConfigurationItem(
+           name: "Flying Text Size",
+           interfaceGroup: "HUD Settings",
+           configOption: UiConfigOption.FlyTextDispSize,
+           headerName: "Text",
+           nested: true
+        )]
+        public FlyTextSize HudFlyingTextSize { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display pop-up text",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.PopUpTextDisp,
+           headerName: "Text"
+        )]
+        public bool HudDisplayPopupText { get; private set; }
+
+        [ConfigurationItem(
+           name: "Pop-up Text Size",
+           interfaceGroup: "HUD Settings",
+           configOption: UiConfigOption.FlyTextDispSize,
+           headerName: "Text",
+           nested: true
+        )]
+        public PopupTextSize HudPopupTextSize { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display parameter bars",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.CharaParamDisp
+        )]
+        public bool HudDisplayParameterBars { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display EXP bar",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.ExpDisp
+        )]
+        public bool HudDisplayExpBar { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display inventory grid",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.InventryStatusDisp
+        )]
+        public bool HudDisplayInventoryGrid { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display duty list",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.DutyListDisp
+        )]
+        public bool HudDisplayDutyList { get; private set; }
+
+        [ConfigurationItem(
+           name: "Number of Duties Displayed",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.DutyListNumDisp,
+           headerName: "Duty List",
+           nested: true
+        )]
+        [ConfigurationInputRange(1, 10)]
+        public uint HudDisplayDutyCount { get; private set; }
+
+        [ConfigurationItem(
+           name: "Hide duty list during instanced duty",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.InInstanceContentDutyListDisp,
+           headerName: "Duty List",
+           nested: true
+        )]
+        public bool HudDisplayDutyListInstanceDuty { get; private set; }
+
+        [ConfigurationItem(
+           name: "Hide duty list during non-instanced duty",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.InPublicContentDutyListDisp,
+           headerName: "Duty List",
+           nested: true
+        )]
+        public bool HudDisplayDutyListNonInstanceDuty { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display registered duties in Timers",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.ContentsInfoJoiningRequestDisp,
+           headerName: "Duty List",
+           nested: true
+        )]
+        public bool HudDisplayRegisteredDutiesTimers { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display duty registration details in Timers",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.ContentsInfoJoiningRequestSituationDisp,
+           headerName: "Duty List",
+           nested: true
+        )]
+        public bool HudDisplayRegisteredDutyDetailTimers { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display minimap",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.NaviMapDisp
+         )]
+        public bool HudDisplayMinimap { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display gil",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.GilStatusDisp
+        )]
+        public bool HudDisplayGil { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display server info",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.InfoSettingDisp,
+           headerName: "Server Info Bar"
+        )]
+        public bool HudDisplayServerInfo { get; private set; }
+
+        [ConfigurationItem(
+           name: "Clock Type",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.InfoSettingDispType,
+           headerName: "Server Info Bar"
+        )]
+        public ServerClockType HudDisplayServerClockType { get; private set; }
+
+        [ConfigurationItem(
+           name: "Eorzea Time",
+           interfaceGroup: "HUD Settings",
+           configOption: UiConfigOption.TimeEorzea,
+           headerName: "Server Info Bar",
+           nested: true
+        )]
+        public bool HudDisplayServerInfoEorzeaTime { get; set; }
+
+        [ConfigurationItem(
+           name: "Local Time",
+           interfaceGroup: "HUD Settings",
+           configOption: UiConfigOption.TimeLocal,
+           headerName: "Server Info Bar",
+           nested: true
+        )]
+        public bool HudDisplayServerInfoLocalTime { get; set; }
+
+        [ConfigurationItem(
+           name: "Server Time",
+           interfaceGroup: "HUD Settings",
+           configOption: UiConfigOption.TimeServer,
+           headerName: "Server Info Bar",
+           nested: true
+        )]
+        public bool HudDisplayServerInfoServerTIme { get; set; }
+
+        [ConfigurationItem(
+           name: "DIsplay current World name",
+           interfaceGroup: "HUD Settings",
+           configOption: UiConfigOption.InfoSettingDispWorldNameType,
+           headerName: "Server Info Bar",
+           nested: true
+        )]
+        public bool HudDisplayServerInfoCurrentWorld { get; set; }
+
+        [ConfigurationItem(
+           name: "Display limit gauge",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.LimitBreakGaugeDisp
+        )]
+        public bool HudDisplayLimitGauge { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display Main Scenario Guide",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.ScenarioTreeCompleteDisp,
+           headerName: "Main Scenario"
+        )]
+        public bool HudDisplayScenarioInfo { get; private set; }
+
+        [ConfigurationItem(
+           name: "Hide when all quests complete",
+           interfaceGroup: "HUD Settings",
+           controlOption: UiControlOption.ScenarioTreeCompleteDisp,
+           headerName: "Main Scenario",
+           nested: true
+        )]
+        public bool HudHideScenarioComplete { get; private set; }
+
+        [ConfigurationItem(
+           name: "Display character portraits with battle dialogue widget",
+           interfaceGroup: "HUD Settings",
+           configOption: UiConfigOption.BattleTalkShowFace
+        )]
+        public bool HudDisplayBattleTextPortraits { get; private set; }
+
+        [ConfigurationItem(
+            name: "Display party list",
+            interfaceGroup: "HUD Settings",
+            controlOption: UiControlOption.PartyListDisp,
+            headerName: "Party List"
+        )]
+        public bool HudDisplayPartyList { get; private set; }
+
+        [ConfigurationItem(
+            name: "Hide party list when solo",
+            interfaceGroup: "HUD Settings",
+            controlOption: UiControlOption.PartyListSoloOff,
+            headerName: "Party List",
+            nested: true
+        )]
+        public bool HudHidePartyListSolo { get; private set; }
 #pragma warning restore CS8618
 
         private readonly HashSet<string> persistedProperties = [];

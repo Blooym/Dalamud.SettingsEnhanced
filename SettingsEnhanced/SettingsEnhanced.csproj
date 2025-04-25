@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/12.0.2">
+  <!-- Project Configuration -->
+  <PropertyGroup>
+    <AssemblyName>SettingsEnhanced</AssemblyName>
+    <Version>0.1.0.0</Version>
+    <PackageProjectUrl>https://github.com/Blooym/Dalamud.SettingsEnhanced</PackageProjectUrl>
+  </PropertyGroup>
+
+  <!-- Build Configuration -->
+  <PropertyGroup>
+    <OutputPath>bin\x64\$(Configuration)\</OutputPath>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+</Project>

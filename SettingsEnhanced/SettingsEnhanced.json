@@ -1,0 +1,8 @@
+{
+  "Author": "Blooym",
+  "Name": "Settings Enhanced",
+  "InternalName": "SettingsEnhanced",
+  "Punchline": "Per-zone system and character configurations",
+  "Description": "Settings Enhanced allows you to set per-zone settings overrides that will automatically apply upon entering and reset to the original value upon leaving.",
+  "RepoUrl": "https://github.com/Blooym/Dalamud.SettingsEnhanced"
+}

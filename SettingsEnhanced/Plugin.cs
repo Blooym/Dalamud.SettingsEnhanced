@@ -1,11 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Game.Config;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using SettingsEnhanced.Configuration;
 using SettingsEnhanced.UI;
@@ -25,10 +25,10 @@ namespace SettingsEnhanced
         [PluginService] public static INotificationManager NotificationManager { get; set; }
         public static WindowManager WindowManager { get; private set; }
         public static PluginConfiguration PluginConfiguration { get; private set; }
-        public static ExcelSheet<TerritoryType> TerritoryTypeSheet { get; private set; }
+        public static IEnumerable<TerritoryType> AllowedTerritories;
 #pragma warning restore CS8618
 
-        public static readonly uint[] AllowedTerritoryUseTypes = [
+        private static readonly uint[] AllowedTerritoryUse = [
              0, // Town
              1 ,// Open World
              2 ,// Inn
@@ -49,7 +49,7 @@ namespace SettingsEnhanced
 
         public Plugin()
         {
-            TerritoryTypeSheet = DataManager.GetExcelSheet<TerritoryType>();
+            AllowedTerritories = DataManager.Excel.GetSheet<TerritoryType>().Where(x => AllowedTerritoryUse.Contains(x.TerritoryIntendedUse.RowId) && !x.IsPvpZone);
             PluginConfiguration = PluginConfiguration.Load();
 
             // Warn about being left in a bad state
@@ -64,7 +64,7 @@ namespace SettingsEnhanced
             GameConfig.SystemChanged += this.OnSystemConfigUpdated;
             GameConfig.UiConfigChanged += this.OnUiConfigChanged;
             WindowManager = new();
-            ConfigurationWindow.ConfigurationSaved += this.OnConfigurationWindowSave;
+            ConfigurationWindow.ConfigurationUpdated += this.OnConfigurationWindowSave;
             PluginConfiguration.WriteNewSysConfigOriginalSafe();
             if (ClientState.IsLoggedIn)
             {
@@ -83,7 +83,7 @@ namespace SettingsEnhanced
             ClientState.Login -= this.OnLogin;
             ClientState.Logout -= this.OnLogout;
             ClientState.TerritoryChanged -= this.UpdateGameSettingsForTerritory;
-            ConfigurationWindow.ConfigurationSaved -= this.OnConfigurationWindowSave;
+            ConfigurationWindow.ConfigurationUpdated -= this.OnConfigurationWindowSave;
             WindowManager.Dispose();
 
             // Apply the base game settings again.
@@ -124,7 +124,7 @@ namespace SettingsEnhanced
         {
             var didApplyModified = false;
             var didApplyOriginal = false;
-            var canApplyModified = AllowedTerritoryUseTypes.Contains(TerritoryTypeSheet.GetRow(territoryId).TerritoryIntendedUse.RowId);
+            var canApplyModified = AllowedTerritories.Any(x => territoryId == x.RowId);
 
             Log.Information($"Checking to overwrite or restore settings data for TerritoryId {territoryId}");
 

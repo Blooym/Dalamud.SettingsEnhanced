@@ -27,8 +27,8 @@ namespace SettingsEnhanced.UI.Windows
             public required UiConfiguration UiConfiguration;
         }
 
-        private static readonly Dictionary<uint, string> TerritoryList = Plugin.TerritoryTypeSheet
-            .Where(t => Plugin.AllowedTerritoryUseTypes.Contains(t.TerritoryIntendedUse.RowId) && !string.IsNullOrEmpty(t.PlaceName.Value.Name.ExtractText())
+        private static readonly Dictionary<uint, string> TerritoryList = Plugin.AllowedTerritories
+            .Where(t => !string.IsNullOrEmpty(t.PlaceName.Value.Name.ExtractText())
             )
             .OrderBy(x => x.PlaceName.Value.Name.ExtractText())
             .ToDictionary(
@@ -48,12 +48,11 @@ namespace SettingsEnhanced.UI.Windows
             .GroupBy(p => p.GetCustomAttribute<UiConfiguration.ConfigurationItemAttribute>()!.InterfaceGroup)
             .OrderBy(g => g.Key);
 
-
-        private string searchTextInput = "";
-        private string warningTextInput = "";
+        private string searchText = "";
+        private string warningAgreeText = "";
         private bool canSaveSettings;
         private SelectedItem? selectedItem;
-        public static event Action? ConfigurationSaved;
+        public static event Action? ConfigurationUpdated;
 
         public ConfigurationWindow() : base("Settings Enhanced")
         {
@@ -79,13 +78,7 @@ namespace SettingsEnhanced.UI.Windows
             ];
         }
 
-        public override void PreOpenCheck()
-        {
-            if (!Plugin.ClientState.IsLoggedIn)
-            {
-                this.IsOpen = false;
-            }
-        }
+        public override bool DrawConditions() => Plugin.ClientState.IsLoggedIn;
 
         public override void Draw()
         {
@@ -117,8 +110,8 @@ namespace SettingsEnhanced.UI.Windows
             const string mustEnterText = "Trans rights are human rights";
             ImGui.TextWrapped($"Type '{mustEnterText}' to continue.");
             ImGui.SetNextItemWidth(ImGui.CalcTextSize(mustEnterText).X * ImGuiHelpers.GlobalScale);
-            ImGui.InputText("##warningTextContinueInput", ref this.warningTextInput, (uint)mustEnterText.Length);
-            ImGui.BeginDisabled(neverMadeBackup || !this.warningTextInput.Equals(mustEnterText, StringComparison.OrdinalIgnoreCase));
+            ImGui.InputText("##warningTextContinueInput", ref this.warningAgreeText, (uint)mustEnterText.Length);
+            ImGui.BeginDisabled(neverMadeBackup || !this.warningAgreeText.Equals(mustEnterText, StringComparison.OrdinalIgnoreCase));
 
             ImGui.NewLine();
             if (ImGui.Button("I acknowledge the risks and wish to continue"))
@@ -142,7 +135,7 @@ namespace SettingsEnhanced.UI.Windows
                 if (ImGui.BeginChild("SidebarChild", default, true))
                 {
                     var filtered = TerritoryList
-                        .Where(x => x.Value.Contains(this.searchTextInput, StringComparison.InvariantCultureIgnoreCase));
+                        .Where(x => x.Value.Contains(this.searchText, StringComparison.InvariantCultureIgnoreCase));
                     var grouped = filtered
                         .GroupBy(x => Plugin.PluginConfiguration.TerritorySystemConfiguration.ContainsKey((ushort)x.Key))
                         .OrderByDescending(g => g.Key);
@@ -150,7 +143,7 @@ namespace SettingsEnhanced.UI.Windows
                     if (ImGui.BeginChild("SearchbarChild", new(0, (25 * ImGuiHelpers.GlobalScale) - ImGui.GetContentRegionAvail().Y)))
                     {
                         ImGui.SetNextItemWidth(-1);
-                        ImGui.InputTextWithHint("##Searchbar", "Search...", ref this.searchTextInput, 50);
+                        ImGui.InputTextWithHint("##Searchbar", "Search...", ref this.searchText, 50);
 
                     }
                     ImGui.EndChild();
@@ -210,27 +203,35 @@ namespace SettingsEnhanced.UI.Windows
                         {
                             if (ImGui.BeginTabItem("System Configuration"))
                             {
-                                foreach (var group in SystemConfigurationItemsGroup)
+                                if (ImGui.BeginChild("SystemConfChild"))
                                 {
-                                    if (ImGui.CollapsingHeader(group.Key.ToString()))
+                                    foreach (var group in SystemConfigurationItemsGroup)
                                     {
-                                        this.DrawConfigurationGroup<SystemConfiguration, SystemConfiguration.ConfigurationItemAttribute>(group, this.selectedItem.SystemConfiguration);
+                                        if (ImGui.CollapsingHeader(group.Key.ToString()))
+                                        {
+                                            this.DrawConfigurationGroup<SystemConfiguration, SystemConfiguration.ConfigurationItemAttribute>(group, this.selectedItem.SystemConfiguration);
+                                        }
                                     }
                                 }
+                                ImGui.EndChild();
                                 ImGui.EndTabItem();
                             }
 
                             if (ImGui.BeginTabItem("Character Configuration"))
                             {
-                                foreach (var group in UiConfigurationItemsGroup)
+                                if (ImGui.BeginChild("CharConfigChild"))
                                 {
-                                    if (ImGui.CollapsingHeader(group.Key.ToString()))
+                                    foreach (var group in UiConfigurationItemsGroup)
                                     {
-                                        this.DrawConfigurationGroup<UiConfiguration, UiConfiguration.ConfigurationItemAttribute>(group, this.selectedItem.UiConfiguration);
+                                        if (ImGui.CollapsingHeader(group.Key.ToString()))
+                                        {
+                                            this.DrawConfigurationGroup<UiConfiguration, UiConfiguration.ConfigurationItemAttribute>(group, this.selectedItem.UiConfiguration);
+                                        }
                                     }
                                 }
+                                ImGui.EndChild();
+                                ImGui.EndTabItem();
                             }
-                            ImGui.EndTabItem();
                         }
                         ImGui.EndTabBar();
                     }
@@ -245,7 +246,7 @@ namespace SettingsEnhanced.UI.Windows
                             Plugin.PluginConfiguration.TerritorySystemConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.SystemConfiguration;
                             Plugin.PluginConfiguration.TerritoryUiConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.UiConfiguration;
                             Plugin.PluginConfiguration.Save();
-                            ConfigurationSaved?.Invoke();
+                            ConfigurationUpdated?.Invoke();
                             this.canSaveSettings = false;
                         }
                         ImGui.EndDisabled();
@@ -261,7 +262,7 @@ namespace SettingsEnhanced.UI.Windows
                             Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId);
                             Plugin.PluginConfiguration.TerritoryUiConfiguration.Remove(this.selectedItem.TerritoryId);
                             Plugin.PluginConfiguration.Save();
-                            ConfigurationSaved?.Invoke();
+                            ConfigurationUpdated?.Invoke();
                         }
                         ImGui.EndDisabled();
                         ImGuiComponents.HelpMarker("Hold 'Left Shift' to enable deletion. Your original settings will be automatically reapplied.");

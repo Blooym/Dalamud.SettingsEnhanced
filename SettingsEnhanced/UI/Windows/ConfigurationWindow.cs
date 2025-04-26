@@ -124,10 +124,10 @@ namespace SettingsEnhanced.UI.Windows
         {
             if (ImGui.BeginChild("UiWithSidebarChild", new(default, ImGui.GetContentRegionAvail().Y - (20 * ImGuiHelpers.GlobalScale)), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
             {
-                if (ImGui.BeginTable("UiWithSidebarTable", 2, ImGuiTableFlags.Resizable))
+                if (ImGui.BeginTable("UiWithSidebarTable", 2))
                 {
-                    ImGui.TableSetupColumn("Sidebar", ImGuiTableColumnFlags.WidthFixed, ImGui.GetContentRegionAvail().X * 0.25f);
-                    ImGui.TableSetupColumn("Main", ImGuiTableColumnFlags.WidthStretch, ImGui.GetContentRegionAvail().X * 0.75f);
+                    ImGui.TableSetupColumn("Sidebar", ImGuiTableColumnFlags.WidthFixed, ImGui.GetContentRegionAvail().X * 0.28f);
+                    ImGui.TableSetupColumn("Main", ImGuiTableColumnFlags.WidthStretch);
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn();
                     if (ImGui.BeginChild("SidebarChild", default, true))
@@ -433,7 +433,7 @@ namespace SettingsEnhanced.UI.Windows
             var range = prop.GetCustomAttribute<ConfigurationInputRangeAttribute>() ?? new(0, 100);
             var currentValue = (uint)(prop.GetValue(configuration) ?? 0);
             var refValue = (int)currentValue;
-            if (ImGui.SliderInt(displayName, ref refValue, range.Min, range.Max))
+            if (ImGui.SliderInt(displayName, ref refValue, range.Min, range.Max, default, ImGuiSliderFlags.AlwaysClamp))
             {
                 configuration.SetPropertyPersistent(prop, (uint)refValue);
                 this.canSaveSettings = true;

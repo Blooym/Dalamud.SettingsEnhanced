@@ -285,14 +285,22 @@ namespace SettingsEnhanced.UI.Windows
                 if (ImGui.Button("Delete Settings"))
                 {
                     this.canSaveSettings = false;
-
-                    // Should never be missing at this point
-                    this.selectedItem.SystemConfiguration = ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllValues();
-                    this.selectedItem.UiConfiguration = ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.ClientState.LocalContentId].Clone()).DepersistAllValues();
-                    Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId);
-                    Plugin.PluginConfiguration.TerritoryUiConfiguration.Remove(this.selectedItem.TerritoryId);
-                    Plugin.PluginConfiguration.Save();
-                    ConfigurationUpdated?.Invoke();
+                    var configsDeleted = false;
+                    if (Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId))
+                    {
+                        this.selectedItem.SystemConfiguration = ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllValues();
+                        configsDeleted = true;
+                    }
+                    if (Plugin.PluginConfiguration.TerritoryUiConfiguration.Remove(this.selectedItem.TerritoryId))
+                    {
+                        this.selectedItem.UiConfiguration = ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.ClientState.LocalContentId].Clone()).DepersistAllValues();
+                        configsDeleted = true;
+                    }
+                    if (configsDeleted)
+                    {
+                        Plugin.PluginConfiguration.Save();
+                        ConfigurationUpdated?.Invoke();
+                    }
                 }
                 ImGui.EndDisabled();
                 ImGuiComponents.HelpMarker("Hold 'Left Shift' to enable deletion. Your original settings will be automatically reapplied.");

@@ -59,14 +59,6 @@ namespace SettingsEnhanced.Configuration
         /// </summary>
         public Dictionary<ushort, UiConfiguration> TerritoryUiConfiguration = [];
 
-        public PluginConfiguration()
-        {
-            if (Plugin.ClientState.IsLoggedIn)
-            {
-                this.OriginalUiConfiguration.TryAdd(Plugin.ClientState.LocalContentId, UiConfiguration.FromGame().PersistAllValues());
-            }
-        }
-
         /// <summary>
         ///     Save the current value of the plugin configuration.
         /// </summary>
@@ -77,5 +69,31 @@ namespace SettingsEnhanced.Configuration
         /// </summary>
         /// <returns></returns>
         public static PluginConfiguration Load() => Plugin.PluginInterface.GetPluginConfig() as PluginConfiguration ?? new();
+
+        public void WriteNewSysConfigOriginalSafe()
+        {
+            if (this.SystemConfigurationOverwritten)
+            {
+                Plugin.Log.Debug("Ignoring WriteNewSysConfig call because it is not currently safe to do so");
+                return;
+            }
+
+            Plugin.Log.Debug($"SystemConfiguration not overwritten - setting current game values as OriginalSystemConfiguration");
+            this.OriginalSystemConfiguration = SystemConfiguration.FromGame().PersistAllValues();
+            this.Save();
+        }
+
+        public void WriteNewUiConfigOriginalSafe(ulong playerContentId)
+        {
+            if (playerContentId == 0 || this.UiConfigurationOverwritten)
+            {
+                Plugin.Log.Debug("Ignoring WriteNewUiConfig call because it is not currently safe to do so");
+                return;
+            }
+
+            Plugin.Log.Debug($"UIConfiguration not overwritten - writing current game values as OriginalUiConfiguration for player {playerContentId}");
+            this.OriginalUiConfiguration[playerContentId] = UiConfiguration.FromGame().PersistAllValues();
+            this.Save();
+        }
     }
 }

@@ -254,6 +254,8 @@ namespace SettingsEnhanced.UI.Windows
                         if (ImGui.Button("Delete Settings"))
                         {
                             this.canSaveSettings = false;
+
+                            // Should never be missing at this point
                             this.selectedItem.SystemConfiguration = ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllValues();
                             this.selectedItem.UiConfiguration = ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.ClientState.LocalContentId].Clone()).DepersistAllValues();
                             Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId);

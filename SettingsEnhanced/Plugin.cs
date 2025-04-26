@@ -8,7 +8,6 @@ using Dalamud.Plugin.Services;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using SettingsEnhanced.Configuration;
-using SettingsEnhanced.Game.Settings;
 using SettingsEnhanced.UI;
 using SettingsEnhanced.UI.Windows;
 
@@ -45,6 +44,7 @@ namespace SettingsEnhanced
              48, // Bozja
              60, // Cosmic Exploration
         ];
+
         public static ulong CurrentPlayerContentId { get; private set; }
 
         public Plugin()
@@ -52,35 +52,25 @@ namespace SettingsEnhanced
             TerritoryTypeSheet = DataManager.GetExcelSheet<TerritoryType>();
             PluginConfiguration = PluginConfiguration.Load();
 
-            ClientState.Login += this.OnLogin;
-            ClientState.Logout += this.OnLogout;
-            ClientState.TerritoryChanged += this.UpdateGameSettingsForTerritory;
-            ConfigurationWindow.ConfigurationSaved += this.OnTriggerReapplyConfiguration;
-            GameConfig.SystemChanged += this.OnSystemConfigUpdated;
-            GameConfig.UiConfigChanged += this.OnUiConfigChanged;
-            WindowManager = new();
-
+            // Warn about being left in a bad state
             if (PluginConfiguration.SystemConfigurationOverwritten || PluginConfiguration.UiConfigurationOverwritten)
             {
                 Log.Warning($"Configuration data was not set back to default last plugin shutdown, possible game crash? SystemOverwritten: {PluginConfiguration.SystemConfigurationOverwritten} UIOverwritten: {PluginConfiguration.UiConfigurationOverwritten}");
             }
 
-            if (!PluginConfiguration.SystemConfigurationOverwritten)
-            {
-                Log.Information($"SystemConfiguration not overwritten, setting current game values as OriginalSystemConfiguration");
-                PluginConfiguration.OriginalSystemConfiguration = SystemConfiguration.FromGame().PersistAllValues();
-                PluginConfiguration.Save();
-            }
+            ClientState.Login += this.OnLogin;
+            ClientState.Logout += this.OnLogout;
+            ClientState.TerritoryChanged += this.UpdateGameSettingsForTerritory;
+            GameConfig.SystemChanged += this.OnSystemConfigUpdated;
+            GameConfig.UiConfigChanged += this.OnUiConfigChanged;
+            WindowManager = new();
+            ConfigurationWindow.ConfigurationSaved += this.OnConfigurationWindowSave;
+            PluginConfiguration.WriteNewSysConfigOriginalSafe();
             if (ClientState.IsLoggedIn)
             {
-                GameConfig.UiConfigChanged += this.OnUiConfigChanged;
                 CurrentPlayerContentId = ClientState.LocalContentId;
-                if (!PluginConfiguration.UiConfigurationOverwritten)
-                {
-                    Log.Information($"UIConfiguration not overwritten, setting current game values as OriginalUiConfiguration for player {CurrentPlayerContentId}");
-                    PluginConfiguration.OriginalUiConfiguration[CurrentPlayerContentId] = UiConfiguration.FromGame().PersistAllValues();
-                    PluginConfiguration.Save();
-                }
+                GameConfig.UiConfigChanged += this.OnUiConfigChanged;
+                PluginConfiguration.WriteNewUiConfigOriginalSafe(CurrentPlayerContentId);
                 Log.Information($"Plugin enabled whilst player logged in: triggering manual territory update");
                 this.UpdateGameSettingsForTerritory(ClientState.TerritoryType);
             }
@@ -88,13 +78,13 @@ namespace SettingsEnhanced
 
         public void Dispose()
         {
-            WindowManager.Dispose();
-            ClientState.TerritoryChanged -= this.UpdateGameSettingsForTerritory;
-            ClientState.Login -= this.OnLogin;
-            ClientState.Logout -= this.OnLogout;
-            ConfigurationWindow.ConfigurationSaved -= this.OnTriggerReapplyConfiguration;
             GameConfig.SystemChanged -= this.OnSystemConfigUpdated;
             GameConfig.UiConfigChanged -= this.OnUiConfigChanged;
+            ClientState.Login -= this.OnLogin;
+            ClientState.Logout -= this.OnLogout;
+            ClientState.TerritoryChanged -= this.UpdateGameSettingsForTerritory;
+            ConfigurationWindow.ConfigurationSaved -= this.OnConfigurationWindowSave;
+            WindowManager.Dispose();
 
             // Apply the base game settings again.
             RestoreAllGameSettings();
@@ -105,9 +95,9 @@ namespace SettingsEnhanced
         /// </summary>
         public void OnLogin()
         {
-            Log.Debug("");
             CurrentPlayerContentId = ClientState.LocalContentId;
             GameConfig.UiConfigChanged += this.OnUiConfigChanged;
+            PluginConfiguration.WriteNewUiConfigOriginalSafe(CurrentPlayerContentId);
         }
 
         /// <summary>
@@ -117,14 +107,14 @@ namespace SettingsEnhanced
         public void OnLogout(int type, int code)
         {
             RestoreAllGameSettings();
-            GameConfig.UiConfigChanged -= this.OnUiConfigChanged;
             CurrentPlayerContentId = 0;
+            GameConfig.UiConfigChanged -= this.OnUiConfigChanged;
         }
 
         /// <summary>
         ///     Manually trigger configuration settings to reapply.
         /// </summary>
-        public void OnTriggerReapplyConfiguration() => this.UpdateGameSettingsForTerritory(ClientState.TerritoryType);
+        public void OnConfigurationWindowSave() => this.UpdateGameSettingsForTerritory(ClientState.TerritoryType);
 
         /// <summary>
         ///     Applies specific zone overrides to settings or handles restoring them when leaving overriden zones.
@@ -154,7 +144,6 @@ namespace SettingsEnhanced
                 PluginConfiguration.SystemConfigurationOverwritten = false;
                 PluginConfiguration.Save();
                 didApplyOriginal = true;
-
             }
 
             // Modify or restore ui configuration data.
@@ -175,6 +164,7 @@ namespace SettingsEnhanced
                 didApplyOriginal = true;
             }
 
+            // Notify depending on state changes.
             if (didApplyModified)
             {
                 NotificationManager.AddNotification(new Notification()
@@ -208,8 +198,7 @@ namespace SettingsEnhanced
                 Log.Debug("Ignoring System Configuration update as settings have been modified by the plugin.");
                 return;
             }
-            Log.Debug("Updating OriginalSystemConfiguration value with current configuration");
-            PluginConfiguration.OriginalSystemConfiguration = SystemConfiguration.FromGame().PersistAllValues();
+            PluginConfiguration.WriteNewSysConfigOriginalSafe();
             PluginConfiguration.Save();
         }
 
@@ -218,13 +207,17 @@ namespace SettingsEnhanced
         /// </summary>
         private void OnUiConfigChanged(object? sender, ConfigChangeEvent e)
         {
+            if (CurrentPlayerContentId == 0)
+            {
+                return;
+            }
+
             if (PluginConfiguration.UiConfigurationOverwritten)
             {
                 Log.Debug("Ignoring Ui Configuration update as settings have been modified by the plugin.");
                 return;
             }
-            Log.Debug("Updating OriginalUiConfiguration value with current configuration");
-            PluginConfiguration.OriginalUiConfiguration[CurrentPlayerContentId] = UiConfiguration.FromGame().PersistAllValues();
+            PluginConfiguration.WriteNewUiConfigOriginalSafe(CurrentPlayerContentId);
             PluginConfiguration.Save();
         }
 

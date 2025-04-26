@@ -28,7 +28,7 @@ namespace SettingsEnhanced.Configuration
         ///     If a user is not in an overriden zone and the plugin has restored original settings, this is true.
         ///     If a user is in an overriden zone or the plugin crashes without safely restoring settings, this is false.
         /// </remarks>
-        public bool SystemConfigurationOverwritten = true;
+        public bool SystemConfigurationOverwritten;
 
         /// <summary>
         ///     Whether or not the Ui Configuration in the current game state were modified by the plugin.
@@ -38,7 +38,7 @@ namespace SettingsEnhanced.Configuration
         ///     If a user is not in an overriden zone and the plugin has restored original settings, this is true.
         ///     If a user is in an overriden zone or the plugin crashes without safely restoring settings, this is false.
         /// </remarks>
-        public bool UiConfigurationOverwritten = true;
+        public bool UiConfigurationOverwritten;
 
         /// <summary>
         ///     A snapshot of the game's System Configuration without plugin modification.

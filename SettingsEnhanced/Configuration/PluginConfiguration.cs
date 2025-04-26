@@ -49,6 +49,7 @@ namespace SettingsEnhanced.Configuration
         ///     A snapshot of the game's Ui Configuration without plugin modification.
         /// </summary>
         public Dictionary<ulong, UiConfiguration> OriginalUiConfiguration = [];
+
         /// <summary>
         ///     Per-territory System Configuration.
         /// </summary>

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Reflection;
 using Dalamud.Game.Config;
 using Dalamud.Interface;
@@ -58,9 +57,9 @@ namespace SettingsEnhanced.UI.Windows
         {
             this.SizeConstraints = new WindowSizeConstraints
             {
-                MinimumSize = new Vector2(1000, 600),
+                MinimumSize = ImGuiHelpers.ScaledVector2(700, 400),
             };
-            this.Size = new Vector2(1000, 600);
+            this.Size = ImGuiHelpers.ScaledVector2(700, 400);
             this.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
             this.SizeCondition = ImGuiCond.FirstUseEver;
             this.TitleBarButtons = [
@@ -84,14 +83,13 @@ namespace SettingsEnhanced.UI.Windows
         {
             if (!Plugin.PluginConfiguration.UiWarningAccepted)
             {
-                this.DrawWarning();
+                this.DrawWarningUi();
                 return;
             }
-
             this.DrawConfigUi();
         }
 
-        private void DrawWarning()
+        private void DrawWarningUi()
         {
             Plugin.GameConfig.TryGet(SystemConfigOption.FirstConfigBackup, out bool neverMadeBackup);
             ImGui.TextColored(ImGuiColors.DalamudRed, "IMPORTANT NOTICE");
@@ -124,153 +122,180 @@ namespace SettingsEnhanced.UI.Windows
 
         private void DrawConfigUi()
         {
-            if (ImGui.BeginTable("UiWithSidebar", 2, ImGuiTableFlags.Resizable))
+            if (ImGui.BeginChild("UiWithSidebarChild", new(default, ImGui.GetContentRegionAvail().Y - (20 * ImGuiHelpers.GlobalScale)), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
             {
-                ImGui.TableSetupColumn("Sidebar", default, ImGui.GetContentRegionAvail().X * 0.25f);
-                ImGui.TableSetupColumn("MainContent", default, ImGui.GetContentRegionAvail().X * 0.75f);
-                ImGui.TableNextRow();
-
-                // Sidebar
-                ImGui.TableNextColumn();
-                if (ImGui.BeginChild("SidebarChild", default, true))
+                if (ImGui.BeginTable("UiWithSidebarTable", 2, ImGuiTableFlags.Resizable))
                 {
-                    var filtered = TerritoryList
-                        .Where(x => x.Value.Contains(this.searchText, StringComparison.InvariantCultureIgnoreCase));
-                    var grouped = filtered
-                        .GroupBy(x => Plugin.PluginConfiguration.TerritorySystemConfiguration.ContainsKey((ushort)x.Key))
-                        .OrderByDescending(g => g.Key);
-
-                    if (ImGui.BeginChild("SearchbarChild", new(0, (25 * ImGuiHelpers.GlobalScale) - ImGui.GetContentRegionAvail().Y)))
+                    ImGui.TableSetupColumn("Sidebar", ImGuiTableColumnFlags.WidthFixed, ImGui.GetContentRegionAvail().X * 0.25f);
+                    ImGui.TableSetupColumn("Main", ImGuiTableColumnFlags.WidthStretch, ImGui.GetContentRegionAvail().X * 0.75f);
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    if (ImGui.BeginChild("SidebarChild", default, true))
                     {
-                        ImGui.SetNextItemWidth(-1);
-                        ImGui.InputTextWithHint("##Searchbar", "Search...", ref this.searchText, 50);
-
+                        this.DrawSidebar();
                     }
                     ImGui.EndChild();
-                    ImGui.Separator();
-
-                    if (ImGui.BeginChild("SearchResultsChild"))
+                    ImGui.TableNextColumn();
+                    if (ImGui.BeginChild("MainContent", default, true))
                     {
-                        foreach (var group in grouped)
-                        {
-                            var hasSettings = group.Key;
-                            ImGui.TextDisabled(hasSettings ? "Custom Settings" : "Default Settings");
-                            foreach (var (id, name) in group)
-                            {
-                                var currentTerritory = Plugin.ClientState.TerritoryType == id;
-                                if (currentTerritory)
-                                    ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.HealerGreen);
-                                if (ImGui.Selectable($"{name}##{id}", id == this.selectedItem?.TerritoryId))
-                                {
-                                    this.selectedItem = new()
-                                    {
-                                        TerritoryId = (ushort)id,
-                                        TerritoryName = name,
-                                        SystemConfiguration = Plugin.PluginConfiguration.TerritorySystemConfiguration
-                                        .GetValueOrDefault(
-                                            (ushort)id,
-                                            ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllValues()
-
-                                        ),
-                                        UiConfiguration = Plugin.PluginConfiguration.TerritoryUiConfiguration.GetValueOrDefault(
-                                            (ushort)id,
-                                            ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.CurrentPlayerContentId].Clone()).DepersistAllValues()
-                                        )
-                                    };
-                                }
-                                if (currentTerritory)
-                                    ImGui.PopStyleColor();
-                            }
-                            ImGuiHelpers.ScaledDummy(8);
-                        }
-                        ImGui.EndChild();
+                        this.DrawMainContent();
                     }
+                    ImGui.EndChild();
+                    ImGui.EndTable();
                 }
             }
             ImGui.EndChild();
-
-            // Listings
-            ImGui.TableNextColumn();
-            if (ImGui.BeginChild("SidebarDetailChild", default, true))
+            if (Plugin.PluginConfiguration.UiConfigurationOverwritten || Plugin.PluginConfiguration.SystemConfigurationOverwritten)
             {
-                if (this.selectedItem is not null)
+                ImGui.TextColored(ImGuiColors.DalamudYellow, "Using zone-specific settings for current area.");
+            }
+            else
+            {
+                ImGui.TextColored(ImGuiColors.HealerGreen, "Using default settings for current area");
+            }
+        }
+
+        private void DrawSidebar()
+        {
+            var filtered = TerritoryList
+                                .Where(x => x.Value.Contains(this.searchText, StringComparison.InvariantCultureIgnoreCase));
+            var grouped = filtered
+                .GroupBy(x => Plugin.PluginConfiguration.TerritorySystemConfiguration.ContainsKey((ushort)x.Key)
+                        || Plugin.PluginConfiguration.TerritoryUiConfiguration.ContainsKey((ushort)x.Key))
+                .OrderByDescending(g => g.Key);
+
+            if (ImGui.BeginChild("SearchbarChild", new(0, (25 * ImGuiHelpers.GlobalScale) - ImGui.GetContentRegionAvail().Y)))
+            {
+                ImGui.SetNextItemWidth(-1);
+                ImGui.InputTextWithHint("##Searchbar", "Search...", ref this.searchText, 50);
+            }
+            ImGui.EndChild();
+            ImGui.Separator();
+
+            if (ImGui.BeginChild("SearchResultsChild"))
+            {
+                foreach (var group in grouped)
                 {
-                    ImGui.TextDisabled(this.selectedItem.TerritoryName);
-                    ImGui.Separator();
-                    if (ImGui.BeginChild("ConfigurationContent", new(0, ImGui.GetContentRegionAvail().Y - (30 * ImGuiHelpers.GlobalScale))))
+                    var hasSettings = group.Key;
+                    ImGui.TextDisabled(hasSettings ? "Custom Settings" : "Default Settings");
+                    foreach (var (id, name) in group)
                     {
-                        if (ImGui.BeginTabBar("ConfigTabs"))
+                        var currentTerritory = Plugin.ClientState.TerritoryType == id;
+                        if (currentTerritory)
+                            ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.HealerGreen);
+                        if (ImGui.Selectable($"{name}##{id}", id == this.selectedItem?.TerritoryId))
                         {
-                            if (ImGui.BeginTabItem("System Configuration"))
+                            this.selectedItem = new()
                             {
-                                if (ImGui.BeginChild("SystemConfChild"))
+                                TerritoryId = (ushort)id,
+                                TerritoryName = name,
+                                SystemConfiguration = Plugin.PluginConfiguration.TerritorySystemConfiguration
+                                .GetValueOrDefault(
+                                    (ushort)id,
+                                    ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllValues()
+
+                                ),
+                                UiConfiguration = Plugin.PluginConfiguration.TerritoryUiConfiguration.GetValueOrDefault(
+                                    (ushort)id,
+                                    ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.CurrentPlayerContentId].Clone()).DepersistAllValues()
+                                )
+                            };
+                        }
+                        if (currentTerritory)
+                            ImGui.PopStyleColor();
+                    }
+                    ImGuiHelpers.ScaledDummy(8);
+                }
+            }
+            ImGui.EndChild();
+        }
+
+        private void DrawMainContent()
+        {
+            if (this.selectedItem is not null)
+            {
+                ImGui.TextDisabled(this.selectedItem.TerritoryName);
+                ImGui.Separator();
+                if (ImGui.BeginChild("ConfigurationContent", new(default, ImGui.GetContentRegionAvail().Y - (26 * ImGuiHelpers.GlobalScale))))
+                {
+                    if (ImGui.BeginTabBar("ConfigTabs"))
+                    {
+                        if (ImGui.BeginTabItem("System Configuration"))
+                        {
+                            if (ImGui.BeginChild("SystemConfChild"))
+                            {
+                                foreach (var group in SystemConfigurationItemsGroup)
                                 {
-                                    foreach (var group in SystemConfigurationItemsGroup)
+                                    if (ImGui.CollapsingHeader(group.Key.ToString()))
                                     {
-                                        if (ImGui.CollapsingHeader(group.Key.ToString()))
-                                        {
-                                            this.DrawConfigurationGroup<SystemConfiguration, SystemConfiguration.ConfigurationItemAttribute>(group, this.selectedItem.SystemConfiguration);
-                                        }
+                                        this.DrawConfigurationGroup<SystemConfiguration, SystemConfiguration.ConfigurationItemAttribute>(group, this.selectedItem.SystemConfiguration);
                                     }
                                 }
-                                ImGui.EndChild();
-                                ImGui.EndTabItem();
                             }
+                            ImGui.EndChild();
+                            ImGui.EndTabItem();
+                        }
 
-                            if (ImGui.BeginTabItem("Character Configuration"))
+                        if (ImGui.BeginTabItem("Character Configuration"))
+                        {
+                            if (ImGui.BeginChild("CharConfigChild"))
                             {
-                                if (ImGui.BeginChild("CharConfigChild"))
+                                foreach (var group in UiConfigurationItemsGroup)
                                 {
-                                    foreach (var group in UiConfigurationItemsGroup)
+                                    if (ImGui.CollapsingHeader(group.Key.ToString()))
                                     {
-                                        if (ImGui.CollapsingHeader(group.Key.ToString()))
-                                        {
-                                            this.DrawConfigurationGroup<UiConfiguration, UiConfiguration.ConfigurationItemAttribute>(group, this.selectedItem.UiConfiguration);
-                                        }
+                                        this.DrawConfigurationGroup<UiConfiguration, UiConfiguration.ConfigurationItemAttribute>(group, this.selectedItem.UiConfiguration);
                                     }
                                 }
-                                ImGui.EndChild();
-                                ImGui.EndTabItem();
                             }
+                            ImGui.EndChild();
+                            ImGui.EndTabItem();
                         }
-                        ImGui.EndTabBar();
                     }
-                    ImGui.EndChild();
-                    ImGui.Separator();
-
-                    if (ImGui.BeginChild("ButtonSection", new Vector2(0, ImGui.GetContentRegionAvail().Y)))
-                    {
-                        ImGui.BeginDisabled(!this.canSaveSettings);
-                        if (ImGui.Button("Apply Settings"))
-                        {
-                            Plugin.PluginConfiguration.TerritorySystemConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.SystemConfiguration;
-                            Plugin.PluginConfiguration.TerritoryUiConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.UiConfiguration;
-                            Plugin.PluginConfiguration.Save();
-                            ConfigurationUpdated?.Invoke();
-                            this.canSaveSettings = false;
-                        }
-                        ImGui.EndDisabled();
-                        ImGui.SameLine();
-                        ImGui.BeginDisabled(!ImGui.IsKeyDown(ImGuiKey.LeftShift));
-                        if (ImGui.Button("Delete Settings"))
-                        {
-                            this.canSaveSettings = false;
-
-                            // Should never be missing at this point
-                            this.selectedItem.SystemConfiguration = ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllValues();
-                            this.selectedItem.UiConfiguration = ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.ClientState.LocalContentId].Clone()).DepersistAllValues();
-                            Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId);
-                            Plugin.PluginConfiguration.TerritoryUiConfiguration.Remove(this.selectedItem.TerritoryId);
-                            Plugin.PluginConfiguration.Save();
-                            ConfigurationUpdated?.Invoke();
-                        }
-                        ImGui.EndDisabled();
-                        ImGuiComponents.HelpMarker("Hold 'Left Shift' to enable deletion. Your original settings will be automatically reapplied.");
-                    }
-                    ImGui.EndChild();
+                    ImGui.EndTabBar();
                 }
                 ImGui.EndChild();
-                ImGui.EndTable();
+                ImGui.Separator();
+
+                // Save and delete buttons.
+                ImGui.BeginDisabled(!this.canSaveSettings);
+                if (ImGui.Button("Apply Settings"))
+                {
+                    var configsChanged = false;
+                    if (this.selectedItem.SystemConfiguration.HasPersistedValues())
+                    {
+                        Plugin.PluginConfiguration.TerritorySystemConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.SystemConfiguration;
+                        configsChanged = true;
+                    }
+                    if (this.selectedItem.UiConfiguration.HasPersistedValues())
+                    {
+                        Plugin.PluginConfiguration.TerritoryUiConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.UiConfiguration;
+                        configsChanged = true;
+                    }
+                    if (configsChanged)
+                    {
+                        Plugin.PluginConfiguration.Save();
+                        ConfigurationUpdated?.Invoke();
+                    }
+                    this.canSaveSettings = false;
+                }
+                ImGui.EndDisabled();
+                ImGui.SameLine();
+                ImGui.BeginDisabled(!ImGui.IsKeyDown(ImGuiKey.LeftShift));
+                if (ImGui.Button("Delete Settings"))
+                {
+                    this.canSaveSettings = false;
+
+                    // Should never be missing at this point
+                    this.selectedItem.SystemConfiguration = ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllValues();
+                    this.selectedItem.UiConfiguration = ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.ClientState.LocalContentId].Clone()).DepersistAllValues();
+                    Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId);
+                    Plugin.PluginConfiguration.TerritoryUiConfiguration.Remove(this.selectedItem.TerritoryId);
+                    Plugin.PluginConfiguration.Save();
+                    ConfigurationUpdated?.Invoke();
+                }
+                ImGui.EndDisabled();
+                ImGuiComponents.HelpMarker("Hold 'Left Shift' to enable deletion. Your original settings will be automatically reapplied.");
             }
         }
 

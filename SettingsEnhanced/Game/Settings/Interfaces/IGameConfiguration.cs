@@ -15,7 +15,13 @@ namespace SettingsEnhanced.Game.Settings.Interfaces
         public TInner DepersistAllValues();
 
         /// <summary>
-        ///     Whether a property is persisted during serialisation and deserialisation.
+        ///     Whether this configuration has any persisted values.
+        /// </summary>
+        /// <returns></returns>
+        public bool HasPersistedValues();
+
+        /// <summary>
+        ///     Whether a property is marked as persisted.
         /// </summary>
         public bool IsPropertyPersistent(PropertyInfo prop);
 
@@ -25,8 +31,9 @@ namespace SettingsEnhanced.Game.Settings.Interfaces
         public void SetPropertyPersistent<T>(PropertyInfo prop, T value);
 
         /// <summary>
-        ///     Set a property to the given value.
+        ///     Set a property to the given value and remove any persistence it may have.
         /// </summary>
         public void SetProperty<T>(PropertyInfo prop, T value);
+
     }
 }

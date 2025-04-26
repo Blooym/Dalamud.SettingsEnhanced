@@ -28,6 +28,7 @@ namespace SettingsEnhanced
         public static IEnumerable<TerritoryType> AllowedTerritories;
 #pragma warning restore CS8618
 
+        private const uint NOTIFICATION_SHOW_SECONDS = 4;
         private static readonly uint[] AllowedTerritoryUse = [
              0, // Town
              1 ,// Open World
@@ -122,68 +123,73 @@ namespace SettingsEnhanced
         /// <param name="territoryId"></param>
         private void UpdateGameSettingsForTerritory(ushort territoryId)
         {
-            var didApplyModified = false;
-            var didApplyOriginal = false;
-            var canApplyModified = AllowedTerritories.Any(x => territoryId == x.RowId);
+            var didApplyType = 0;
 
-            Log.Information($"Checking to overwrite or restore settings data for TerritoryId {territoryId}");
+            Log.Debug($"Checking if plugin should overwrite or restore game settings data for {territoryId}");
+
+            // Explicitly remove configurations for territories that aren't allowed.
+            if (!AllowedTerritories.Any(x => territoryId == x.RowId))
+            {
+                Log.Warning($"Configuration contains a territory override for {territoryId} which isn't in the allowlist, it will be removed");
+                PluginConfiguration.TerritorySystemConfiguration.Remove(territoryId);
+                PluginConfiguration.TerritorySystemConfiguration.Remove(territoryId);
+                PluginConfiguration.Save();
+            }
 
             // Modify or restore system configuration data.
-            if (canApplyModified && PluginConfiguration.TerritorySystemConfiguration.TryGetValue(territoryId, out var systemConfig))
+            if (PluginConfiguration.TerritorySystemConfiguration.TryGetValue(territoryId, out var systemConfig))
             {
-                Log.Information($"TerritoryId has system setting overrides, applying modified data");
+                Log.Information($"{territoryId} has system setting overrides, applying modified data");
                 PluginConfiguration.SystemConfigurationOverwritten = true;
                 PluginConfiguration.Save();
                 systemConfig.ApplyToGame();
-                didApplyModified = true;
+                didApplyType = 1;
             }
             else if (PluginConfiguration.SystemConfigurationOverwritten)
             {
-                Log.Information($"TerritoryId does not have any system setting overrides and they are still modified, restoring defaults");
+                Log.Information($"{territoryId} does not have any system setting overrides and they are still modified, restoring game defaults");
                 PluginConfiguration.OriginalSystemConfiguration.ApplyToGame();
                 PluginConfiguration.SystemConfigurationOverwritten = false;
                 PluginConfiguration.Save();
-                didApplyOriginal = true;
+                didApplyType = 2;
             }
 
             // Modify or restore ui configuration data.
-            if (canApplyModified && PluginConfiguration.TerritoryUiConfiguration.TryGetValue(territoryId, out var uiConfig))
+            if (PluginConfiguration.TerritoryUiConfiguration.TryGetValue(territoryId, out var uiConfig))
             {
-                Log.Information($"TerritoryId has ui settings overrides, applying modified data");
+                Log.Information($"{territoryId} has ui settings overrides, applying modified data");
                 PluginConfiguration.UiConfigurationOverwritten = true;
                 PluginConfiguration.Save();
                 uiConfig.ApplyToGame();
-                didApplyModified = true;
+                didApplyType = 1;
             }
             else if (PluginConfiguration.UiConfigurationOverwritten && PluginConfiguration.OriginalUiConfiguration.TryGetValue(CurrentPlayerContentId, out var charConfig))
             {
-                Log.Information($"TerritoryId does not have any ui settings overrides and they are still modified, restoring defaults");
+                Log.Information($"{territoryId} does not have any ui settings overrides and they are still modified, restoring game defaults");
                 charConfig.ApplyToGame();
                 PluginConfiguration.UiConfigurationOverwritten = false;
                 PluginConfiguration.Save();
-                didApplyOriginal = true;
+                didApplyType = 2;
             }
 
             // Notify depending on state changes.
-            if (didApplyModified)
+            if (didApplyType == 1)
             {
                 NotificationManager.AddNotification(new Notification()
                 {
                     Title = "Configuration Modified",
                     Content = "Zone configuration applied",
-                    HardExpiry = DateTime.Now.AddSeconds(5),
-                    UserDismissable = false,
+                    HardExpiry = DateTime.Now.AddSeconds(NOTIFICATION_SHOW_SECONDS),
                     Type = NotificationType.Info
                 });
             }
-            else if (didApplyOriginal)
+            else if (didApplyType == 2)
 
                 NotificationManager.AddNotification(new Notification()
                 {
                     Title = "Configuration Restored",
                     Content = "Game configuration data restored",
-                    HardExpiry = DateTime.Now.AddSeconds(5),
-                    UserDismissable = false,
+                    HardExpiry = DateTime.Now.AddSeconds(NOTIFICATION_SHOW_SECONDS),
                     Type = NotificationType.Info
                 });
         }
@@ -250,8 +256,7 @@ namespace SettingsEnhanced
                 {
                     Title = "Configuration Restored",
                     Content = "Game configuration data restored",
-                    HardExpiry = DateTime.Now.AddSeconds(5),
-                    UserDismissable = false,
+                    HardExpiry = DateTime.Now.AddSeconds(NOTIFICATION_SHOW_SECONDS),
                     Type = NotificationType.Info
                 });
             }

@@ -178,6 +178,9 @@ namespace SettingsEnhanced.Game.Settings
         }
 
         /// <inheritdoc />
+        public bool HasPersistedValues() => this.persistedProperties.Count != 0;
+
+        /// <inheritdoc />
         public bool IsPropertyPersistent(PropertyInfo prop) => this.persistedProperties.Contains(prop.Name);
 
         /// <inheritdoc />

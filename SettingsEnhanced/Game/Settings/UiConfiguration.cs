@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Dalamud.Game.Config;
 using Newtonsoft.Json;
@@ -22,14 +23,14 @@ namespace SettingsEnhanced.Game.Settings
                 string interfaceGroup,
                 UiConfigOption configOption,
                 string headerName = "",
-                bool nested = false
+                bool indented = false
             )
             {
                 this.InterfaceName = name;
                 this.InterfaceGroup = interfaceGroup;
                 this.ConfigOption = configOption;
                 this.InterfaceHeaderName = headerName;
-                this.Nested = nested;
+                this.Indented = indented;
             }
 
             // Constructor for UiControlOption
@@ -38,14 +39,14 @@ namespace SettingsEnhanced.Game.Settings
                 string interfaceGroup,
                 UiControlOption controlOption,
                 string headerName = "",
-                bool nested = false
+                bool indented = false
             )
             {
                 this.InterfaceName = name;
                 this.InterfaceGroup = interfaceGroup;
                 this.ControlOption = controlOption;
                 this.InterfaceHeaderName = headerName;
-                this.Nested = nested;
+                this.Indented = indented;
             }
 
             /// <inheritdoc />
@@ -58,7 +59,7 @@ namespace SettingsEnhanced.Game.Settings
             public string InterfaceGroup { get; }
 
             /// <inheritdoc />
-            public bool Nested { get; }
+            public bool Indented { get; }
 
             // Property for UiConfigOption
             public UiConfigOption? ConfigOption { get; }
@@ -167,7 +168,7 @@ namespace SettingsEnhanced.Game.Settings
             interfaceGroup: "Item Settings",
             configOption: UiConfigOption.ShopConfirmMateria,
             headerName: "Shop Settings",
-            nested: true
+            indented: true
         )]
         public bool ShopConfirmMeldableItems { get; private set; }
 
@@ -176,7 +177,7 @@ namespace SettingsEnhanced.Game.Settings
             interfaceGroup: "Item Settings",
             configOption: UiConfigOption.ShopConfirmSpiritBondMax,
             headerName: "Shop Settings",
-            nested: true
+            indented: true
         )]
         public bool ShopConfirmSpiritbondMax { get; private set; }
 
@@ -185,7 +186,7 @@ namespace SettingsEnhanced.Game.Settings
             interfaceGroup: "Item Settings",
             configOption: UiConfigOption.ShopConfirmExRare,
             headerName: "Shop Settings",
-            nested: true
+            indented: true
         )]
         public bool ShopConfirmRareItem { get; private set; }
 
@@ -210,7 +211,7 @@ namespace SettingsEnhanced.Game.Settings
            interfaceGroup: "HUD Settings",
            configOption: UiConfigOption.FlyTextDispSize,
            headerName: "Text",
-           nested: true
+           indented: true
         )]
         public FlyTextSize HudFlyingTextSize { get; private set; }
 
@@ -227,7 +228,7 @@ namespace SettingsEnhanced.Game.Settings
            interfaceGroup: "HUD Settings",
            configOption: UiConfigOption.FlyTextDispSize,
            headerName: "Text",
-           nested: true
+           indented: true
         )]
         public PopupTextSize HudPopupTextSize { get; private set; }
 
@@ -265,7 +266,7 @@ namespace SettingsEnhanced.Game.Settings
            interfaceGroup: "HUD Settings",
            controlOption: UiControlOption.DutyListNumDisp,
            headerName: "Duty List",
-           nested: true
+           indented: true
         )]
         [ConfigurationInputRange(1, 10)]
         public uint HudDisplayDutyCount { get; private set; }
@@ -275,7 +276,7 @@ namespace SettingsEnhanced.Game.Settings
            interfaceGroup: "HUD Settings",
            controlOption: UiControlOption.InInstanceContentDutyListDisp,
            headerName: "Duty List",
-           nested: true
+           indented: true
         )]
         public bool HudDisplayDutyListInstanceDuty { get; private set; }
 
@@ -284,7 +285,7 @@ namespace SettingsEnhanced.Game.Settings
            interfaceGroup: "HUD Settings",
            controlOption: UiControlOption.InPublicContentDutyListDisp,
            headerName: "Duty List",
-           nested: true
+           indented: true
         )]
         public bool HudDisplayDutyListNonInstanceDuty { get; private set; }
 
@@ -293,7 +294,7 @@ namespace SettingsEnhanced.Game.Settings
            interfaceGroup: "HUD Settings",
            controlOption: UiControlOption.ContentsInfoJoiningRequestDisp,
            headerName: "Duty List",
-           nested: true
+           indented: true
         )]
         public bool HudDisplayRegisteredDutiesTimers { get; private set; }
 
@@ -302,7 +303,7 @@ namespace SettingsEnhanced.Game.Settings
            interfaceGroup: "HUD Settings",
            controlOption: UiControlOption.ContentsInfoJoiningRequestSituationDisp,
            headerName: "Duty List",
-           nested: true
+           indented: true
         )]
         public bool HudDisplayRegisteredDutyDetailTimers { get; private set; }
 
@@ -341,7 +342,7 @@ namespace SettingsEnhanced.Game.Settings
            interfaceGroup: "HUD Settings",
            configOption: UiConfigOption.TimeEorzea,
            headerName: "Server Info Bar",
-           nested: true
+           indented: true
         )]
         public bool HudDisplayServerInfoEorzeaTime { get; set; }
 
@@ -350,7 +351,7 @@ namespace SettingsEnhanced.Game.Settings
            interfaceGroup: "HUD Settings",
            configOption: UiConfigOption.TimeLocal,
            headerName: "Server Info Bar",
-           nested: true
+           indented: true
         )]
         public bool HudDisplayServerInfoLocalTime { get; set; }
 
@@ -359,7 +360,7 @@ namespace SettingsEnhanced.Game.Settings
            interfaceGroup: "HUD Settings",
            configOption: UiConfigOption.TimeServer,
            headerName: "Server Info Bar",
-           nested: true
+           indented: true
         )]
         public bool HudDisplayServerInfoServerTIme { get; set; }
 
@@ -368,7 +369,7 @@ namespace SettingsEnhanced.Game.Settings
            interfaceGroup: "HUD Settings",
            configOption: UiConfigOption.InfoSettingDispWorldNameType,
            headerName: "Server Info Bar",
-           nested: true
+           indented: true
         )]
         public bool HudDisplayServerInfoCurrentWorld { get; set; }
 
@@ -392,7 +393,7 @@ namespace SettingsEnhanced.Game.Settings
            interfaceGroup: "HUD Settings",
            controlOption: UiControlOption.ScenarioTreeCompleteDisp,
            headerName: "Main Scenario",
-           nested: true
+           indented: true
         )]
         public bool HudHideScenarioComplete { get; private set; }
 
@@ -416,17 +417,25 @@ namespace SettingsEnhanced.Game.Settings
             interfaceGroup: "HUD Settings",
             controlOption: UiControlOption.PartyListSoloOff,
             headerName: "Party List",
-            nested: true
+            indented: true
         )]
         public bool HudHidePartyListSolo { get; private set; }
 #pragma warning restore CS8618
 
+        /// <summary>
+        ///     Properties that will be kept across serialisation and deserialisation.
+        /// </summary>
         private readonly HashSet<string> persistedProperties = [];
 
+        /// <summary>
+        ///     Properties that have been modified since the last time this configuration was applied.
+        /// </summary>
+        private readonly HashSet<string> modifiedProperties = [];
+
         /// <inheritdoc />
-        public UiConfiguration PersistAllValues()
+        public UiConfiguration PersistAllProperties()
         {
-            foreach (var prop in typeof(UiConfiguration).GetProperties())
+            foreach (var prop in this.GetType().GetProperties(Plugin.ConfigReflectionBindingFlags))
             {
                 this.persistedProperties.Add(prop.Name);
             }
@@ -434,39 +443,33 @@ namespace SettingsEnhanced.Game.Settings
         }
 
         /// <inheritdoc />
-        public UiConfiguration DepersistAllValues()
+        public UiConfiguration DepersistAllProperties()
         {
             this.persistedProperties.Clear();
             return this;
         }
 
+        /// <inheritdoc />
+        public bool AnyPersistedProperties() => this.persistedProperties.Count != 0;
 
         /// <inheritdoc />
-        public bool HasPersistedValues() => this.persistedProperties.Count != 0;
+        public bool IsPropertyPersisted(PropertyInfo prop) => this.persistedProperties.Contains(prop.Name);
 
         /// <inheritdoc />
-        public bool IsPropertyPersistent(PropertyInfo prop) => this.persistedProperties.Contains(prop.Name);
+        public bool PersistProperty(PropertyInfo prop) => this.persistedProperties.Add(prop.Name);
 
         /// <inheritdoc />
-        public void SetPropertyPersistent<T>(PropertyInfo prop, T value)
+        public bool DepersistProperty(PropertyInfo prop) => this.persistedProperties.Remove(prop.Name);
+
+        /// <inheritdoc />
+        public void SetPropertyValue<T>(PropertyInfo prop, T value)
         {
             if (!prop.CanWrite)
             {
                 throw new InvalidOperationException($"Property {prop} is read-only.");
             }
             prop.SetValue(this, value);
-            this.persistedProperties.Add(prop.Name);
-        }
-
-        /// <inheritdoc />
-        public void SetProperty<T>(PropertyInfo prop, T value)
-        {
-            if (!prop.CanWrite)
-            {
-                throw new InvalidOperationException($"Property {prop} is read-only.");
-            }
-            prop.SetValue(this, value);
-            this.persistedProperties.Remove(prop.Name);
+            this.modifiedProperties.Add(prop.Name);
         }
 
         /// <inheritdoc />
@@ -478,59 +481,23 @@ namespace SettingsEnhanced.Game.Settings
         }
 
         /// <summary>
-        ///     Apply all settings in this instance to the current game settings.
+        ///     Read all settings from the game into a new instance of this class.
         /// </summary>
         public static UiConfiguration FromGame()
         {
             var uiConfiguration = new UiConfiguration();
-
-            foreach (var prop in typeof(UiConfiguration).GetProperties())
+            foreach (var prop in typeof(UiConfiguration).GetProperties(Plugin.ConfigReflectionBindingFlags))
             {
                 var configOptionAttribute = prop.GetCustomAttribute<ConfigurationItemAttribute>();
                 if (configOptionAttribute != null)
                 {
-                    if (configOptionAttribute.ConfigOption.HasValue)
+                    if (configOptionAttribute.ConfigOption is not null && GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ConfigOption, prop.PropertyType, out var uiConfigValue) && uiConfigValue is not null)
                     {
-                        var configOption = configOptionAttribute.ConfigOption.Value;
-
-                        if (prop.PropertyType.IsEnum && Plugin.GameConfig.TryGet(configOption, out uint enumValue))
-                        {
-                            var enumConvertedValue = (Enum)Enum.ToObject(prop.PropertyType, enumValue);
-                            prop.SetValue(uiConfiguration, enumConvertedValue);
-                        }
-                        else if (prop.PropertyType == typeof(uint) && Plugin.GameConfig.TryGet(configOption, out uint uintValue))
-                        {
-                            prop.SetValue(uiConfiguration, uintValue);
-                        }
-                        else if (prop.PropertyType == typeof(bool) && Plugin.GameConfig.TryGet(configOption, out bool boolValue))
-                        {
-                            prop.SetValue(uiConfiguration, boolValue);
-                        }
-                        else if (prop.PropertyType == typeof(string) && Plugin.GameConfig.TryGet(configOption, out string stringValue))
-                        {
-                            prop.SetValue(uiConfiguration, stringValue);
-                        }
+                        prop.SetValue(uiConfiguration, uiConfigValue);
                     }
-                    else if (configOptionAttribute.ControlOption.HasValue)
+                    else if (configOptionAttribute.ControlOption is not null && GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ControlOption, prop.PropertyType, out var uiControlValue) && uiControlValue is not null)
                     {
-                        var controlOption = configOptionAttribute.ControlOption.Value;
-                        if (prop.PropertyType.IsEnum && Plugin.GameConfig.TryGet(controlOption, out uint enumValue))
-                        {
-                            var enumConvertedValue = (Enum)Enum.ToObject(prop.PropertyType, enumValue);
-                            prop.SetValue(uiConfiguration, enumConvertedValue);
-                        }
-                        else if (prop.PropertyType == typeof(uint) && Plugin.GameConfig.TryGet(controlOption, out uint uintValue))
-                        {
-                            prop.SetValue(uiConfiguration, uintValue);
-                        }
-                        else if (prop.PropertyType == typeof(bool) && Plugin.GameConfig.TryGet(controlOption, out bool boolValue))
-                        {
-                            prop.SetValue(uiConfiguration, boolValue);
-                        }
-                        else if (prop.PropertyType == typeof(string) && Plugin.GameConfig.TryGet(controlOption, out string stringValue))
-                        {
-                            prop.SetValue(uiConfiguration, stringValue);
-                        }
+                        prop.SetValue(uiConfiguration, uiControlValue);
                     }
                 }
             }
@@ -540,14 +507,13 @@ namespace SettingsEnhanced.Game.Settings
         /// <summary>
         ///     Apply all settings in this instance to the current game settings.
         /// </summary>
-        public void ApplyToGame()
+        /// <param name="onlyApplyModified">Only apply properties that have been modified since the last time this configuration was applied.</param>
+        public void ApplyToGame(bool onlyApplyModified)
         {
-            foreach (var prop in this.GetType().GetProperties())
+            foreach (var prop in typeof(UiConfiguration)
+                .GetProperties(Plugin.ConfigReflectionBindingFlags)
+                .Where(p => !onlyApplyModified || this.modifiedProperties.Contains(p.Name)))
             {
-                if (!this.persistedProperties.Contains(prop.Name))
-                {
-                    continue;
-                }
                 var configOptionAttribute = prop.GetCustomAttribute<ConfigurationItemAttribute>();
                 if (configOptionAttribute != null)
                 {
@@ -556,6 +522,7 @@ namespace SettingsEnhanced.Game.Settings
                     {
                         continue;
                     }
+                    Plugin.Log.Debug($"Applying {prop.Name}:{value} to game");
                     if (configOptionAttribute.ConfigOption.HasValue)
                     {
                         var configOption = configOptionAttribute.ConfigOption.Value;
@@ -601,6 +568,7 @@ namespace SettingsEnhanced.Game.Settings
                         }
                     }
                 }
+                this.modifiedProperties.Remove(prop.Name);
             }
         }
 
@@ -612,33 +580,33 @@ namespace SettingsEnhanced.Game.Settings
                 {
                     throw new InvalidOperationException("Attempt to write null value");
                 }
-
                 var onlyPersisted = new JObject();
-                foreach (var property in value.GetType().GetProperties())
+                foreach (var prop in typeof(UiConfiguration).GetProperties(Plugin.ConfigReflectionBindingFlags))
                 {
-                    var currentValue = property.GetValue(value);
-                    if (value.IsPropertyPersistent(property) && currentValue is not null)
+                    var currentValue = prop.GetValue(value);
+                    if (value.IsPropertyPersisted(prop) && currentValue is not null)
                     {
-                        Plugin.Log.Debug($"Serialising persisted property {property.Name} ({property.MemberType}) on UiConfiguration");
-                        onlyPersisted.Add(property.Name, JToken.FromObject(currentValue));
+                        Plugin.Log.Verbose($"Serialising persisted property {prop.Name} ({prop.MemberType}) on UiConfiguration");
+                        onlyPersisted.Add(prop.Name, JToken.FromObject(currentValue));
                     }
                 }
                 onlyPersisted.WriteTo(writer);
+
             }
 
             public override UiConfiguration ReadJson(JsonReader reader, Type objectType, UiConfiguration? existingValue, bool hasExistingValue, JsonSerializer serializer)
             {
                 existingValue = FromGame();
                 var jObject = JObject.Load(reader);
-                foreach (var property in jObject.Properties())
+                foreach (var jproperty in jObject.Properties())
                 {
-                    var propertyInfo = objectType.GetProperty(property.Name);
-                    if (propertyInfo != null)
+                    var property = objectType.GetProperty(jproperty.Name);
+                    if (property != null)
                     {
-                        var value = property.Value.ToObject(propertyInfo.PropertyType, serializer);
-                        propertyInfo.SetValue(existingValue, value);
-                        existingValue.persistedProperties.Add(propertyInfo.Name);
-                        Plugin.Log.Debug($"Deserialising persisted property {propertyInfo.Name} ({propertyInfo.MemberType}) on UiConfiguration");
+                        var value = jproperty.Value.ToObject(property.PropertyType, serializer);
+                        existingValue.persistedProperties.Add(property.Name);
+                        property.SetValue(existingValue, value);
+                        Plugin.Log.Verbose($"Deserialising persisted property {property.Name} ({property.MemberType}) on UiConfiguration");
                     }
                 }
                 return existingValue;

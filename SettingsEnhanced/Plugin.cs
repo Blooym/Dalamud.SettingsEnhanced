@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Dalamud.Game.Config;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.IoC;
@@ -8,6 +9,7 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
 using SettingsEnhanced.Configuration;
+using SettingsEnhanced.Game.Settings;
 using SettingsEnhanced.UI;
 using SettingsEnhanced.UI.Windows;
 
@@ -16,6 +18,7 @@ namespace SettingsEnhanced
 
     internal sealed class Plugin : IDalamudPlugin
     {
+        // SAFETY: valid from plugin start.
 #pragma warning disable CS8618
         [PluginService] public static IDalamudPluginInterface PluginInterface { get; set; }
         [PluginService] public static IClientState ClientState { get; set; }
@@ -45,7 +48,7 @@ namespace SettingsEnhanced
              48, // Bozja
              60, // Cosmic Exploration
         ];
-
+        public const BindingFlags ConfigReflectionBindingFlags = BindingFlags.Public | BindingFlags.Instance;
         public static ulong CurrentPlayerContentId { get; private set; }
 
         public Plugin()
@@ -71,6 +74,7 @@ namespace SettingsEnhanced
             {
                 CurrentPlayerContentId = ClientState.LocalContentId;
                 GameConfig.UiConfigChanged += this.OnUiConfigChanged;
+                GameConfig.UiControlChanged += this.OnUiConfigChanged;
                 PluginConfiguration.WriteNewUiConfigOriginalSafe(CurrentPlayerContentId);
                 Log.Information($"Plugin enabled whilst player logged in: triggering manual territory update");
                 this.UpdateGameSettingsForTerritory(ClientState.TerritoryType);
@@ -81,6 +85,7 @@ namespace SettingsEnhanced
         {
             GameConfig.SystemChanged -= this.OnSystemConfigUpdated;
             GameConfig.UiConfigChanged -= this.OnUiConfigChanged;
+            GameConfig.UiControlChanged -= this.OnUiControlChanged;
             ClientState.Login -= this.OnLogin;
             ClientState.Logout -= this.OnLogout;
             ClientState.TerritoryChanged -= this.UpdateGameSettingsForTerritory;
@@ -98,6 +103,7 @@ namespace SettingsEnhanced
         {
             CurrentPlayerContentId = ClientState.LocalContentId;
             GameConfig.UiConfigChanged += this.OnUiConfigChanged;
+            GameConfig.UiControlChanged += this.OnUiControlChanged;
             PluginConfiguration.WriteNewUiConfigOriginalSafe(CurrentPlayerContentId);
         }
 
@@ -109,6 +115,7 @@ namespace SettingsEnhanced
         {
             RestoreAllGameSettings();
             CurrentPlayerContentId = 0;
+            GameConfig.UiControlChanged -= this.OnUiControlChanged;
             GameConfig.UiConfigChanged -= this.OnUiConfigChanged;
         }
 
@@ -140,15 +147,15 @@ namespace SettingsEnhanced
             if (PluginConfiguration.TerritorySystemConfiguration.TryGetValue(territoryId, out var systemConfig))
             {
                 Log.Information($"{territoryId} has system setting overrides, applying modified data");
+                systemConfig.ApplyToGame(onlyApplyModified: true);
                 PluginConfiguration.SystemConfigurationOverwritten = true;
                 PluginConfiguration.Save();
-                systemConfig.ApplyToGame();
                 didApplyType = 1;
             }
             else if (PluginConfiguration.SystemConfigurationOverwritten)
             {
                 Log.Information($"{territoryId} does not have any system setting overrides and they are still modified, restoring game defaults");
-                PluginConfiguration.OriginalSystemConfiguration.ApplyToGame();
+                PluginConfiguration.OriginalSystemConfiguration.ApplyToGame(onlyApplyModified: false);
                 PluginConfiguration.SystemConfigurationOverwritten = false;
                 PluginConfiguration.Save();
                 didApplyType = 2;
@@ -158,15 +165,15 @@ namespace SettingsEnhanced
             if (PluginConfiguration.TerritoryUiConfiguration.TryGetValue(territoryId, out var uiConfig))
             {
                 Log.Information($"{territoryId} has ui settings overrides, applying modified data");
+                uiConfig.ApplyToGame(onlyApplyModified: true);
                 PluginConfiguration.UiConfigurationOverwritten = true;
                 PluginConfiguration.Save();
-                uiConfig.ApplyToGame();
                 didApplyType = 1;
             }
             else if (PluginConfiguration.UiConfigurationOverwritten && PluginConfiguration.OriginalUiConfiguration.TryGetValue(CurrentPlayerContentId, out var charConfig))
             {
                 Log.Information($"{territoryId} does not have any ui settings overrides and they are still modified, restoring game defaults");
-                charConfig.ApplyToGame();
+                charConfig.ApplyToGame(onlyApplyModified: false);
                 PluginConfiguration.UiConfigurationOverwritten = false;
                 PluginConfiguration.Save();
                 didApplyType = 2;
@@ -199,13 +206,32 @@ namespace SettingsEnhanced
         /// </summary>
         private void OnSystemConfigUpdated(object? sender, ConfigChangeEvent e)
         {
-            if (PluginConfiguration.SystemConfigurationOverwritten)
+            // Only handles options the plugin controls.
+            var option = (SystemConfigOption)e.Option;
+            var updatedOptionProperty = typeof(SystemConfiguration)
+                .GetProperties(ConfigReflectionBindingFlags)
+                .FirstOrDefault(x => x.GetCustomAttribute<SystemConfiguration.ConfigurationItemAttribute>()?.ConfigOption == option);
+            if (updatedOptionProperty is null)
             {
-                Log.Debug("Ignoring System Configuration update as settings have been modified by the plugin.");
                 return;
             }
-            PluginConfiguration.WriteNewSysConfigOriginalSafe();
-            PluginConfiguration.Save();
+            var newGameValue = GameConfigUtil.TryGetGameConfigValue(option, updatedOptionProperty.PropertyType, out var value);
+            PluginConfiguration.TerritorySystemConfiguration.TryGetValue(ClientState.TerritoryType, out var config);
+
+            // If the plugin is has not overwritten settings OR if the current configuration has not overwritten this option, update the original config.
+            if (!PluginConfiguration.SystemConfigurationOverwritten || (config is not null && !config.IsPropertyPersisted(updatedOptionProperty)))
+            {
+                Log.Debug($"SystemConfiguration saving {option} to original value as value is not overwritten");
+                PluginConfiguration.OriginalSystemConfiguration.SetPropertyValue(updatedOptionProperty, value);
+                PluginConfiguration.Save();
+                return;
+            }
+            // If the plugin has a config for this area and is overwritting the option, don't apply the change anywhere
+            if (config is not null && config.IsPropertyPersisted(updatedOptionProperty))
+            {
+                Log.Debug($"SystemConfiguration not saving {option} as it is overwritten by the plugin");
+                return;
+            }
         }
 
         /// <summary>
@@ -218,13 +244,70 @@ namespace SettingsEnhanced
                 return;
             }
 
-            if (PluginConfiguration.UiConfigurationOverwritten)
+            // Only handles options the plugin controls.
+            var option = (UiConfigOption)e.Option;
+            var updatedOptionProperty = typeof(UiConfiguration)
+                .GetProperties(ConfigReflectionBindingFlags)
+                .FirstOrDefault(x => x.GetCustomAttribute<UiConfiguration.ConfigurationItemAttribute>()?.ConfigOption == option);
+            if (updatedOptionProperty is null)
             {
-                Log.Debug("Ignoring Ui Configuration update as settings have been modified by the plugin.");
                 return;
             }
-            PluginConfiguration.WriteNewUiConfigOriginalSafe(CurrentPlayerContentId);
-            PluginConfiguration.Save();
+
+            var newGameValue = GameConfigUtil.TryGetGameConfigValue(option, updatedOptionProperty.PropertyType, out var value);
+            PluginConfiguration.TerritoryUiConfiguration.TryGetValue(ClientState.TerritoryType, out var config);
+
+            // If the plugin is has not overwritten settings OR if the current configuration has not overwritten this option, update the original config.
+            if (!PluginConfiguration.UiConfigurationOverwritten || (config is not null && !config.IsPropertyPersisted(updatedOptionProperty)))
+            {
+                Log.Debug($"UiConfiguration saving {option} to original value as value is not overwritten");
+                PluginConfiguration.OriginalSystemConfiguration.SetPropertyValue(updatedOptionProperty, value);
+                PluginConfiguration.Save();
+                return;
+            }
+            // If the plugin has a config for this area and is overwritting the option, don't apply the change anywhere
+            if (config is not null && config.IsPropertyPersisted(updatedOptionProperty))
+            {
+                Log.Debug($"UiConfiguration not saving {option} as it is overwritten by the plugin");
+                return;
+            }
+        }
+
+        /// <summary>
+        ///     Updates stored original ui configuration when configuration is overwritten.
+        /// </summary>
+        private void OnUiControlChanged(object? sender, ConfigChangeEvent e)
+        {
+            if (CurrentPlayerContentId == 0)
+            {
+                return;
+            }
+            // Only handles options the plugin controls.
+            var option = (UiControlOption)e.Option;
+            var updatedOptionProperty = typeof(UiConfiguration)
+                .GetProperties(ConfigReflectionBindingFlags)
+                .FirstOrDefault(x => x.GetCustomAttribute<UiConfiguration.ConfigurationItemAttribute>()?.ControlOption == option);
+            if (updatedOptionProperty is null)
+            {
+                return;
+            }
+            var newGameValue = GameConfigUtil.TryGetGameConfigValue(option, updatedOptionProperty.PropertyType, out var value);
+            PluginConfiguration.TerritoryUiConfiguration.TryGetValue(ClientState.TerritoryType, out var config);
+
+            // If the plugin is has not overwritten settings OR if the current configuration has not overwritten this option, update the original config.
+            if (!PluginConfiguration.UiConfigurationOverwritten || (config is not null && !config.IsPropertyPersisted(updatedOptionProperty)))
+            {
+                Log.Debug($"UiConfiguration saving {option} to original value as value is not overwritten");
+                PluginConfiguration.OriginalSystemConfiguration.SetPropertyValue(updatedOptionProperty, value);
+                PluginConfiguration.Save();
+                return;
+            }
+            // If the plugin has a config for this area and is overwritting the option, don't apply the change anywhere
+            if (config is not null && config.IsPropertyPersisted(updatedOptionProperty))
+            {
+                Log.Debug($"UiConfiguration not saving {option} as it is overwritten by the plugin");
+                return;
+            }
         }
 
         /// <summary>
@@ -237,14 +320,14 @@ namespace SettingsEnhanced
             var anyRestored = false;
             if (PluginConfiguration.UiConfigurationOverwritten && PluginConfiguration.OriginalUiConfiguration.TryGetValue(CurrentPlayerContentId, out var charConfig))
             {
-                charConfig.ApplyToGame();
+                charConfig.ApplyToGame(onlyApplyModified: false);
                 PluginConfiguration.UiConfigurationOverwritten = false;
                 anyRestored = true;
                 Log.Information($"Restored UiConfiguration for {CurrentPlayerContentId}");
             }
             if (PluginConfiguration.SystemConfigurationOverwritten)
             {
-                PluginConfiguration.OriginalSystemConfiguration.ApplyToGame();
+                PluginConfiguration.OriginalSystemConfiguration.ApplyToGame(onlyApplyModified: false);
                 PluginConfiguration.SystemConfigurationOverwritten = false;
                 anyRestored = true;
                 Log.Information($"Restored SystemConfiguration");

@@ -8,5 +8,4 @@ namespace SettingsEnhanced.Game.Settings.Attributes
         public int Min { get; } = min;
         public int Max { get; } = max;
     }
-
 }

@@ -3,23 +3,23 @@ namespace SettingsEnhanced.Game.Settings.Interfaces
     public interface IUiDisplay
     {
         /// <summary>
-        ///     User-interface friendly name of this property.
+        ///     The name to use when displaying this item.
         /// </summary>
         public string InterfaceName { get; }
 
         /// <summary>
-        ///     User-interface header this property belongs to.
-        /// </summary>
-        public string InterfaceHeaderName { get; }
-
-        /// <summary>
-        ///     The interface group this property belongs to.
+        ///     The main group this item should be placed under.
         /// </summary>
         public string InterfaceGroup { get; }
 
         /// <summary>
-        ///     Whether this property is nested under the previous one.
+        ///     The heading this item should be placed under.
         /// </summary>
-        public bool Nested { get; }
+        public string InterfaceHeaderName { get; }
+
+        /// <summary>
+        ///     Whether this item should be indented when displayed.
+        /// </summary>
+        public bool Indented { get; }
     }
 }

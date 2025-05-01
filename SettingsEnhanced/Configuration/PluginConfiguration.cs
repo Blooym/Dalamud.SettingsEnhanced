@@ -43,7 +43,7 @@ namespace SettingsEnhanced.Configuration
         /// <summary>
         ///     A snapshot of the game's System Configuration without plugin modification.
         /// </summary>
-        public SystemConfiguration OriginalSystemConfiguration = SystemConfiguration.FromGame().PersistAllValues();
+        public SystemConfiguration OriginalSystemConfiguration = SystemConfiguration.FromGame().PersistAllProperties();
 
         /// <summary>
         ///     A snapshot of the game's Ui Configuration without plugin modification.
@@ -71,30 +71,42 @@ namespace SettingsEnhanced.Configuration
         /// <returns></returns>
         public static PluginConfiguration Load() => Plugin.PluginInterface.GetPluginConfig() as PluginConfiguration ?? new();
 
-        public void WriteNewSysConfigOriginalSafe()
+        /// <summary>
+        ///     Write a new system configuration original value
+        /// </summary>
+        /// <remarks>
+        ///     This method will only update the system configuration if it is safe to do so.
+        /// </remarks>
+        public bool WriteNewSysConfigOriginalSafe()
         {
             if (this.SystemConfigurationOverwritten)
             {
-                Plugin.Log.Debug("Ignoring WriteNewSysConfig call because it is not currently safe to do so");
-                return;
+                Plugin.Log.Debug("Ignoring WriteNewSysConfigOriginalSafe call because it is not currently safe to do so");
+                return false;
             }
-
             Plugin.Log.Debug($"SystemConfiguration not overwritten - setting current game values as OriginalSystemConfiguration");
-            this.OriginalSystemConfiguration = SystemConfiguration.FromGame().PersistAllValues();
+            this.OriginalSystemConfiguration = SystemConfiguration.FromGame().PersistAllProperties();
             this.Save();
+            return true;
         }
 
-        public void WriteNewUiConfigOriginalSafe(ulong playerContentId)
+        /// <summary>
+        ///     Write a new ui configuration original value
+        /// </summary>
+        /// <remarks>
+        ///     This method will only update the ui configuration if it is safe to do so.
+        /// </remarks>
+        public bool WriteNewUiConfigOriginalSafe(ulong playerContentId)
         {
             if (playerContentId == 0 || this.UiConfigurationOverwritten)
             {
-                Plugin.Log.Debug("Ignoring WriteNewUiConfig call because it is not currently safe to do so");
-                return;
+                Plugin.Log.Debug("Ignoring WriteNewUiConfigOriginalSafe call because it is not currently safe to do so");
+                return false;
             }
-
             Plugin.Log.Debug($"UIConfiguration not overwritten - writing current game values as OriginalUiConfiguration for player {playerContentId}");
-            this.OriginalUiConfiguration[playerContentId] = UiConfiguration.FromGame().PersistAllValues();
+            this.OriginalUiConfiguration[playerContentId] = UiConfiguration.FromGame().PersistAllProperties();
             this.Save();
+            return true;
         }
     }
 }

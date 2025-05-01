@@ -5,35 +5,41 @@ namespace SettingsEnhanced.Game.Settings.Interfaces
     public interface IGameConfiguration<TInner>
     {
         /// <summary>
-        ///     Persist all values so they are retained during serialisation and deserialisation.
+        ///     Persist all properties so they are kept after serialisation and deserialisation.
         /// </summary>
-        public TInner PersistAllValues();
+        public TInner PersistAllProperties();
 
         /// <summary>
-        ///     "De-persist" all values so they will not be retained during serialisation and deserialisation.
+        ///     "De-persist" all properties so they are not kept after serialisation and deserialisation.
         /// </summary>
-        public TInner DepersistAllValues();
+        public TInner DepersistAllProperties();
 
         /// <summary>
-        ///     Whether this configuration has any persisted values.
+        ///     Whether this configuration has any persisted properties.
         /// </summary>
-        /// <returns></returns>
-        public bool HasPersistedValues();
+        public bool AnyPersistedProperties();
 
         /// <summary>
         ///     Whether a property is marked as persisted.
         /// </summary>
-        public bool IsPropertyPersistent(PropertyInfo prop);
+        public bool IsPropertyPersisted(PropertyInfo prop);
 
         /// <summary>
-        ///     Set a property to the given value and persist it.
+        ///     Mark a property as persisted.
         /// </summary>
-        public void SetPropertyPersistent<T>(PropertyInfo prop, T value);
+        public bool PersistProperty(PropertyInfo prop);
 
         /// <summary>
-        ///     Set a property to the given value and remove any persistence it may have.
+        ///     Unmark a property as persisted.
         /// </summary>
-        public void SetProperty<T>(PropertyInfo prop, T value);
+        public bool DepersistProperty(PropertyInfo prop);
 
+        /// <summary>
+        ///     Set a property to the given value.
+        /// </summary>
+        /// <remarks>
+        ///     The property will automatically be marked as modified.
+        /// </remarks>
+        public void SetPropertyValue<T>(PropertyInfo prop, T value);
     }
 }

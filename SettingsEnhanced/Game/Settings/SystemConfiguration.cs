@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Dalamud.Game.Config;
 using Newtonsoft.Json;
@@ -9,7 +10,6 @@ using SettingsEnhanced.Game.Settings.Interfaces;
 
 namespace SettingsEnhanced.Game.Settings
 {
-
     [JsonConverter(typeof(JsonConverter))]
     internal sealed class SystemConfiguration : IGameConfiguration<SystemConfiguration>, ICloneable
     {
@@ -19,7 +19,7 @@ namespace SettingsEnhanced.Game.Settings
             string interfaceGroup,
             SystemConfigOption configOption,
             string headerName = "",
-            bool nested = false
+            bool indented = false
         ) : Attribute, IUiDisplay
         {
             /// <inheritdoc />
@@ -32,7 +32,7 @@ namespace SettingsEnhanced.Game.Settings
             public string InterfaceGroup { get; } = interfaceGroup;
 
             /// <inheritdoc />
-            public bool Nested { get; } = nested;
+            public bool Indented { get; } = indented;
 
             /// <summary>
             ///     Enum value for Dalamud's internal handling of this config value.
@@ -158,12 +158,20 @@ namespace SettingsEnhanced.Game.Settings
         public string ScreenshotLocationDir { get; private set; }
 #pragma warning restore CS8618
 
+        /// <summary>
+        ///     Properties that will be kept across serialisation and deserialisation.
+        /// </summary>
         private readonly HashSet<string> persistedProperties = [];
 
+        /// <summary>
+        ///     Properties that have been modified since the last time this configuration was applied.
+        /// </summary>
+        private readonly HashSet<string> modifiedProperties = [];
+
         /// <inheritdoc />
-        public SystemConfiguration PersistAllValues()
+        public SystemConfiguration PersistAllProperties()
         {
-            foreach (var prop in typeof(SystemConfiguration).GetProperties())
+            foreach (var prop in typeof(SystemConfiguration).GetProperties(Plugin.ConfigReflectionBindingFlags))
             {
                 this.persistedProperties.Add(prop.Name);
             }
@@ -171,38 +179,33 @@ namespace SettingsEnhanced.Game.Settings
         }
 
         /// <inheritdoc />
-        public SystemConfiguration DepersistAllValues()
+        public SystemConfiguration DepersistAllProperties()
         {
             this.persistedProperties.Clear();
             return this;
         }
 
         /// <inheritdoc />
-        public bool HasPersistedValues() => this.persistedProperties.Count != 0;
+        public bool AnyPersistedProperties() => this.persistedProperties.Count != 0;
 
         /// <inheritdoc />
-        public bool IsPropertyPersistent(PropertyInfo prop) => this.persistedProperties.Contains(prop.Name);
+        public bool IsPropertyPersisted(PropertyInfo prop) => this.persistedProperties.Contains(prop.Name);
 
         /// <inheritdoc />
-        public void SetPropertyPersistent<T>(PropertyInfo prop, T value)
+        public bool PersistProperty(PropertyInfo prop) => this.persistedProperties.Add(prop.Name);
+
+        /// <inheritdoc />
+        public bool DepersistProperty(PropertyInfo prop) => this.persistedProperties.Remove(prop.Name);
+
+        /// <inheritdoc />
+        public void SetPropertyValue<T>(PropertyInfo prop, T value)
         {
             if (!prop.CanWrite)
             {
                 throw new InvalidOperationException($"Property {prop} is read-only.");
             }
             prop.SetValue(this, value);
-            this.persistedProperties.Add(prop.Name);
-        }
-
-        /// <inheritdoc />
-        public void SetProperty<T>(PropertyInfo prop, T value)
-        {
-            if (!prop.CanWrite)
-            {
-                throw new InvalidOperationException($"Property {prop} is read-only.");
-            }
-            prop.SetValue(this, value);
-            this.persistedProperties.Remove(prop.Name);
+            this.modifiedProperties.Add(prop.Name);
         }
 
         /// <inheritdoc />
@@ -214,33 +217,17 @@ namespace SettingsEnhanced.Game.Settings
         }
 
         /// <summary>
-        ///     Create an instance of this configuration from the current game settings.
+        ///     Read all settings from the game into a new instance of this class.
         /// </summary>
         public static SystemConfiguration FromGame()
         {
             var systemConfiguration = new SystemConfiguration();
-            foreach (var prop in typeof(SystemConfiguration).GetProperties())
+            foreach (var prop in typeof(SystemConfiguration).GetProperties(Plugin.ConfigReflectionBindingFlags))
             {
                 var configOptionAttribute = prop.GetCustomAttribute<ConfigurationItemAttribute>();
-                if (configOptionAttribute != null)
+                if (configOptionAttribute != null && GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ConfigOption, prop.PropertyType, out var value) && value is not null)
                 {
-                    if (prop.PropertyType.IsEnum && Plugin.GameConfig.TryGet(configOptionAttribute.ConfigOption, out uint enumValue))
-                    {
-                        var enumConvertedValue = (Enum)Enum.ToObject(prop.PropertyType, enumValue);
-                        prop.SetValue(systemConfiguration, enumConvertedValue);
-                    }
-                    if (prop.PropertyType == typeof(uint) && Plugin.GameConfig.TryGet(configOptionAttribute.ConfigOption, out uint uintValue))
-                    {
-                        prop.SetValue(systemConfiguration, uintValue);
-                    }
-                    else if (prop.PropertyType == typeof(bool) && Plugin.GameConfig.TryGet(configOptionAttribute.ConfigOption, out bool boolValue))
-                    {
-                        prop.SetValue(systemConfiguration, boolValue);
-                    }
-                    else if (prop.PropertyType == typeof(string) && Plugin.GameConfig.TryGet(configOptionAttribute.ConfigOption, out string stringValue))
-                    {
-                        prop.SetValue(systemConfiguration, stringValue);
-                    }
+                    prop.SetValue(systemConfiguration, value);
                 }
             }
             return systemConfiguration;
@@ -249,15 +236,13 @@ namespace SettingsEnhanced.Game.Settings
         /// <summary>
         ///     Apply all settings in this instance to the current game settings.
         /// </summary>
-        public void ApplyToGame()
+        /// <param name="onlyApplyModified">Only apply properties that have been modified since the last time this configuration was applied.</param>
+        public void ApplyToGame(bool onlyApplyModified)
         {
-            foreach (var prop in this.GetType().GetProperties())
+            foreach (var prop in typeof(SystemConfiguration)
+                    .GetProperties(Plugin.ConfigReflectionBindingFlags)
+                    .Where(p => !onlyApplyModified || this.modifiedProperties.Contains(p.Name)))
             {
-                if (!this.persistedProperties.Contains(prop.Name))
-                {
-                    continue;
-                }
-
                 var configOptionAttribute = prop.GetCustomAttribute<ConfigurationItemAttribute>();
                 if (configOptionAttribute != null)
                 {
@@ -266,6 +251,7 @@ namespace SettingsEnhanced.Game.Settings
                     {
                         continue;
                     }
+                    Plugin.Log.Debug($"Applying {prop.Name}:{value} to game");
                     if (prop.PropertyType.IsEnum)
                     {
                         var enumValue = Convert.ToUInt32(value);
@@ -283,6 +269,7 @@ namespace SettingsEnhanced.Game.Settings
                     {
                         Plugin.GameConfig.Set(configOptionAttribute.ConfigOption, (string)value);
                     }
+                    this.modifiedProperties.Remove(prop.Name);
                 }
             }
         }
@@ -296,12 +283,12 @@ namespace SettingsEnhanced.Game.Settings
                     throw new InvalidOperationException("Attempt to write null value");
                 }
                 var onlyPersisted = new JObject();
-                foreach (var prop in value.GetType().GetProperties())
+                foreach (var prop in typeof(SystemConfiguration).GetProperties(Plugin.ConfigReflectionBindingFlags))
                 {
                     var currentValue = prop.GetValue(value);
-                    if (value.IsPropertyPersistent(prop) && currentValue is not null)
+                    if (value.IsPropertyPersisted(prop) && currentValue is not null)
                     {
-                        Plugin.Log.Debug($"Serialising persisted property {prop.Name} ({prop.MemberType}) on SystemConfiguration");
+                        Plugin.Log.Verbose($"Serialising persisted property {prop.Name} ({prop.MemberType}) on SystemConfiguration");
                         onlyPersisted.Add(prop.Name, JToken.FromObject(currentValue));
                     }
                 }
@@ -313,15 +300,15 @@ namespace SettingsEnhanced.Game.Settings
             {
                 existingValue = FromGame();
                 var jObject = JObject.Load(reader);
-                foreach (var property in jObject.Properties())
+                foreach (var jproperty in jObject.Properties())
                 {
-                    var propertyInfo = objectType.GetProperty(property.Name);
-                    if (propertyInfo != null)
+                    var property = objectType.GetProperty(jproperty.Name);
+                    if (property != null)
                     {
-                        var value = property.Value.ToObject(propertyInfo.PropertyType, serializer);
-                        propertyInfo.SetValue(existingValue, value);
-                        existingValue.persistedProperties.Add(propertyInfo.Name);
-                        Plugin.Log.Debug($"Deserialising persisted property {propertyInfo.Name} ({propertyInfo.MemberType}) on SystemConfiguration");
+                        var value = jproperty.Value.ToObject(property.PropertyType, serializer);
+                        existingValue.persistedProperties.Add(property.Name);
+                        property.SetValue(existingValue, value);
+                        Plugin.Log.Verbose($"Deserialising persisted property {property.Name} ({property.MemberType}) on SystemConfiguration");
                     }
                 }
                 return existingValue;

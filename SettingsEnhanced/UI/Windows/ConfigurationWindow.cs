@@ -36,19 +36,18 @@ namespace SettingsEnhanced.UI.Windows
             );
 
         private static readonly IOrderedEnumerable<IGrouping<string, PropertyInfo>> SystemConfigurationItemsGroup = typeof(SystemConfiguration)
-            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .GetProperties(Plugin.ConfigReflectionBindingFlags)
             .Where(p => p.GetCustomAttribute<SystemConfiguration.ConfigurationItemAttribute>() != null)
             .GroupBy(p => p.GetCustomAttribute<SystemConfiguration.ConfigurationItemAttribute>()!.InterfaceGroup)
             .OrderBy(g => g.Key);
 
         private static readonly IOrderedEnumerable<IGrouping<string, PropertyInfo>> UiConfigurationItemsGroup = typeof(UiConfiguration)
-            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .GetProperties(Plugin.ConfigReflectionBindingFlags)
             .Where(p => p.GetCustomAttribute<UiConfiguration.ConfigurationItemAttribute>() != null)
             .GroupBy(p => p.GetCustomAttribute<UiConfiguration.ConfigurationItemAttribute>()!.InterfaceGroup)
             .OrderBy(g => g.Key);
 
         private string searchText = "";
-        private string warningAgreeText = "";
         private bool canSaveSettings;
         private SelectedItem? selectedItem;
         public static event Action? ConfigurationUpdated;
@@ -57,11 +56,13 @@ namespace SettingsEnhanced.UI.Windows
         {
             this.SizeConstraints = new WindowSizeConstraints
             {
-                MinimumSize = ImGuiHelpers.ScaledVector2(700, 400),
+                MinimumSize = ImGuiHelpers.ScaledVector2(750, 400),
             };
-            this.Size = ImGuiHelpers.ScaledVector2(700, 400);
+            this.Size = ImGuiHelpers.ScaledVector2(750, 400);
             this.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
             this.SizeCondition = ImGuiCond.FirstUseEver;
+            this.AllowClickthrough = false;
+            this.AllowPinning = false;
             this.TitleBarButtons = [
                 new()
                 {
@@ -83,13 +84,13 @@ namespace SettingsEnhanced.UI.Windows
         {
             if (!Plugin.PluginConfiguration.UiWarningAccepted)
             {
-                this.DrawWarningUi();
+                DrawWarningUi();
                 return;
             }
             this.DrawConfigUi();
         }
 
-        private void DrawWarningUi()
+        private static void DrawWarningUi()
         {
             Plugin.GameConfig.TryGet(SystemConfigOption.FirstConfigBackup, out bool neverMadeBackup);
             ImGui.TextColored(ImGuiColors.DalamudRed, "IMPORTANT NOTICE");
@@ -105,19 +106,14 @@ namespace SettingsEnhanced.UI.Windows
                 return;
             }
 
-            const string mustEnterText = "Trans rights are human rights";
-            ImGui.TextWrapped($"Type '{mustEnterText}' to continue.");
-            ImGui.SetNextItemWidth(ImGui.CalcTextSize(mustEnterText).X * ImGuiHelpers.GlobalScale);
-            ImGui.InputText("##warningTextContinueInput", ref this.warningAgreeText, (uint)mustEnterText.Length);
-            ImGui.BeginDisabled(neverMadeBackup || !this.warningAgreeText.Equals(mustEnterText, StringComparison.OrdinalIgnoreCase));
-
-            ImGui.NewLine();
+            ImGui.BeginDisabled(neverMadeBackup || !ImGui.IsKeyDown(ImGuiKey.LeftShift));
             if (ImGui.Button("I acknowledge the risks and wish to continue"))
             {
                 Plugin.PluginConfiguration.UiWarningAccepted = true;
                 Plugin.PluginConfiguration.Save();
             }
             ImGui.EndDisabled();
+            ImGuiComponents.HelpMarker("Hold 'Left Shift' to activate the button");
         }
 
         private void DrawConfigUi()
@@ -147,11 +143,13 @@ namespace SettingsEnhanced.UI.Windows
             ImGui.EndChild();
             if (Plugin.PluginConfiguration.UiConfigurationOverwritten || Plugin.PluginConfiguration.SystemConfigurationOverwritten)
             {
-                ImGui.TextColored(ImGuiColors.DalamudYellow, "Using zone-specific settings for current area.");
+                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudYellow, $"Currently using zone settings");
+                ImGuiComponents.HelpMarker("Changing a setting you have overwritten in this zone via the in-game options menu will only apply temporarily and will not be saved.\n\nChanging any setting you have not overwritten will apply to your global game configuration as normal.", FontAwesomeIcon.QuestionCircle);
             }
             else
             {
-                ImGui.TextColored(ImGuiColors.HealerGreen, "Using default settings for current area");
+                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.HealerGreen, "Currently using game settings");
+                ImGuiComponents.HelpMarker("All changes to your settings will work as normal.", FontAwesomeIcon.QuestionCircle);
             }
         }
 
@@ -182,7 +180,7 @@ namespace SettingsEnhanced.UI.Windows
                     {
                         var currentTerritory = Plugin.ClientState.TerritoryType == id;
                         if (currentTerritory)
-                            ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.HealerGreen);
+                            ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudViolet);
                         if (ImGui.Selectable($"{name}##{id}", id == this.selectedItem?.TerritoryId))
                         {
                             this.selectedItem = new()
@@ -192,12 +190,12 @@ namespace SettingsEnhanced.UI.Windows
                                 SystemConfiguration = Plugin.PluginConfiguration.TerritorySystemConfiguration
                                 .GetValueOrDefault(
                                     (ushort)id,
-                                    ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllValues()
+                                    ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllProperties()
 
                                 ),
                                 UiConfiguration = Plugin.PluginConfiguration.TerritoryUiConfiguration.GetValueOrDefault(
                                     (ushort)id,
-                                    ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.CurrentPlayerContentId].Clone()).DepersistAllValues()
+                                    ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.CurrentPlayerContentId].Clone()).DepersistAllProperties()
                                 )
                             };
                         }
@@ -257,26 +255,20 @@ namespace SettingsEnhanced.UI.Windows
                 ImGui.EndChild();
                 ImGui.Separator();
 
-                // Save and delete buttons.
                 ImGui.BeginDisabled(!this.canSaveSettings);
                 if (ImGui.Button("Apply Settings"))
                 {
-                    var configsChanged = false;
-                    if (this.selectedItem.SystemConfiguration.HasPersistedValues())
-                    {
+                    // Set or remove configurations depending on if they have any persists left.
+                    if (this.selectedItem.SystemConfiguration.AnyPersistedProperties())
                         Plugin.PluginConfiguration.TerritorySystemConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.SystemConfiguration;
-                        configsChanged = true;
-                    }
-                    if (this.selectedItem.UiConfiguration.HasPersistedValues())
-                    {
+                    else
+                        Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId);
+                    if (this.selectedItem.UiConfiguration.AnyPersistedProperties())
                         Plugin.PluginConfiguration.TerritoryUiConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.UiConfiguration;
-                        configsChanged = true;
-                    }
-                    if (configsChanged)
-                    {
-                        Plugin.PluginConfiguration.Save();
-                        ConfigurationUpdated?.Invoke();
-                    }
+                    else
+                        Plugin.PluginConfiguration.TerritoryUiConfiguration.Remove(this.selectedItem.TerritoryId);
+                    Plugin.PluginConfiguration.Save();
+                    ConfigurationUpdated?.Invoke();
                     this.canSaveSettings = false;
                 }
                 ImGui.EndDisabled();
@@ -288,12 +280,12 @@ namespace SettingsEnhanced.UI.Windows
                     var configsDeleted = false;
                     if (Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId))
                     {
-                        this.selectedItem.SystemConfiguration = ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllValues();
+                        this.selectedItem.SystemConfiguration = ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllProperties();
                         configsDeleted = true;
                     }
                     if (Plugin.PluginConfiguration.TerritoryUiConfiguration.Remove(this.selectedItem.TerritoryId))
                     {
-                        this.selectedItem.UiConfiguration = ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.ClientState.LocalContentId].Clone()).DepersistAllValues();
+                        this.selectedItem.UiConfiguration = ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.ClientState.LocalContentId].Clone()).DepersistAllProperties();
                         configsDeleted = true;
                     }
                     if (configsDeleted)
@@ -334,7 +326,7 @@ namespace SettingsEnhanced.UI.Windows
             var configOptionAttribute = prop.GetCustomAttribute<TAttribute>();
             var displayName = configOptionAttribute?.InterfaceName ?? prop.Name;
 
-            if (configOptionAttribute?.Nested == true)
+            if (configOptionAttribute?.Indented is true)
             {
                 ImGui.Indent();
             }
@@ -350,7 +342,7 @@ namespace SettingsEnhanced.UI.Windows
             else if (prop.PropertyType == typeof(string))
                 this.DrawStringProperty(configuration, prop, displayName);
 
-            if (configOptionAttribute?.Nested == true)
+            if (configOptionAttribute?.Indented is true)
             {
                 ImGui.Unindent();
             }
@@ -358,17 +350,18 @@ namespace SettingsEnhanced.UI.Windows
 
         private void DrawPropertyResetButton<T>(T configuration, PropertyInfo prop) where T : IGameConfiguration<T>
         {
-            ImGui.BeginDisabled(!configuration.IsPropertyPersistent(prop));
+            ImGui.BeginDisabled(!configuration.IsPropertyPersisted(prop));
             if (ImGuiComponents.IconButton(prop.Name, FontAwesomeIcon.Sync))
             {
                 if (typeof(T) == typeof(UiConfiguration))
                 {
                     if (Plugin.PluginConfiguration.OriginalUiConfiguration.TryGetValue(Plugin.CurrentPlayerContentId, out var uiConfig))
                     {
-                        var propertyValue = uiConfig.GetType().GetProperty(prop.Name)?.GetValue(uiConfig);
+                        var propertyValue = typeof(UiConfiguration).GetProperty(prop.Name)?.GetValue(uiConfig);
                         if (propertyValue != null)
                         {
-                            configuration.SetProperty(prop, propertyValue);
+                            configuration.SetPropertyValue(prop, propertyValue);
+                            configuration.DepersistProperty(prop);
                             this.canSaveSettings = true;
                         }
                         else
@@ -379,10 +372,11 @@ namespace SettingsEnhanced.UI.Windows
                 }
                 else if (typeof(T) == typeof(SystemConfiguration))
                 {
-                    var defaultValue = Plugin.PluginConfiguration.OriginalSystemConfiguration.GetType().GetProperty(prop.Name);
+                    var defaultValue = typeof(SystemConfiguration).GetProperty(prop.Name)?.GetValue(Plugin.PluginConfiguration.OriginalSystemConfiguration);
                     if (defaultValue is not null)
                     {
-                        configuration.SetProperty(prop, defaultValue.GetValue(Plugin.PluginConfiguration.OriginalSystemConfiguration));
+                        configuration.SetPropertyValue(prop, defaultValue);
+                        configuration.DepersistProperty(prop);
                         this.canSaveSettings = true;
                     }
                     else
@@ -391,6 +385,10 @@ namespace SettingsEnhanced.UI.Windows
                     }
                 }
             }
+            if (ImGui.IsItemHovered())
+            {
+                ImGui.SetTooltip("Reset this option to its original value");
+            }
             ImGui.EndDisabled();
         }
 
@@ -398,18 +396,15 @@ namespace SettingsEnhanced.UI.Windows
         {
             var enumValues = Enum.GetValues(prop.PropertyType).Cast<Enum>().ToArray();
             var value = prop.GetValue(configuration) as Enum;
-            if (value is null && ImGui.Selectable("None", value is null))
-            {
-                configuration.SetPropertyPersistent<Enum?>(prop, null);
-            }
-            else if (ImGui.BeginCombo(displayName, value?.ToString() ?? "None"))
+            if (ImGui.BeginCombo(displayName, value?.ToString() ?? "None"))
             {
                 foreach (var enumValue in enumValues)
                 {
                     var isSelected = enumValue.Equals(value);
                     if (ImGui.Selectable(enumValue.ToString(), isSelected))
                     {
-                        configuration.SetPropertyPersistent(prop, Enum.ToObject(prop.PropertyType, enumValue));
+                        configuration.SetPropertyValue(prop, Enum.ToObject(prop.PropertyType, enumValue));
+                        configuration.PersistProperty(prop);
                         this.canSaveSettings = true;
                     }
                 }
@@ -423,7 +418,8 @@ namespace SettingsEnhanced.UI.Windows
             var currentValue = (string)(prop.GetValue(configuration) ?? "");
             if (ImGui.InputText(displayName, ref currentValue, (uint)range.Max) && currentValue.Length > range.Min)
             {
-                configuration.SetPropertyPersistent(prop, currentValue);
+                configuration.SetPropertyValue(prop, currentValue);
+                configuration.PersistProperty(prop);
                 this.canSaveSettings = true;
             }
         }
@@ -435,7 +431,8 @@ namespace SettingsEnhanced.UI.Windows
             var refValue = (int)currentValue;
             if (ImGui.SliderInt(displayName, ref refValue, range.Min, range.Max, default, ImGuiSliderFlags.AlwaysClamp))
             {
-                configuration.SetPropertyPersistent(prop, (uint)refValue);
+                configuration.SetPropertyValue(prop, (uint)refValue);
+                configuration.PersistProperty(prop);
                 this.canSaveSettings = true;
             }
         }
@@ -445,7 +442,8 @@ namespace SettingsEnhanced.UI.Windows
             var currentValue = (bool)(prop.GetValue(configuration) ?? false);
             if (ImGui.Checkbox(displayName, ref currentValue))
             {
-                configuration.SetPropertyPersistent(prop, currentValue);
+                configuration.SetPropertyValue(prop, currentValue);
+                configuration.PersistProperty(prop);
                 this.canSaveSettings = true;
             }
         }

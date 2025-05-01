@@ -26,6 +26,8 @@ namespace SettingsEnhanced.UI.Windows
             public required UiConfiguration UiConfiguration;
         }
 
+        private const ImGuiWindowFlags NoScrollFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
+
         private static readonly Dictionary<uint, string> TerritoryList = Plugin.AllowedTerritories
             .Where(t => !string.IsNullOrEmpty(t.PlaceName.Value.Name.ExtractText())
             )
@@ -47,6 +49,7 @@ namespace SettingsEnhanced.UI.Windows
             .GroupBy(p => p.GetCustomAttribute<UiConfiguration.ConfigurationItemAttribute>()!.InterfaceGroup)
             .OrderBy(g => g.Key);
 
+
         private string searchText = "";
         private bool canSaveSettings;
         private SelectedItem? selectedItem;
@@ -59,7 +62,7 @@ namespace SettingsEnhanced.UI.Windows
                 MinimumSize = ImGuiHelpers.ScaledVector2(750, 400),
             };
             this.Size = ImGuiHelpers.ScaledVector2(750, 400);
-            this.Flags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
+            this.Flags = NoScrollFlags;
             this.SizeCondition = ImGuiCond.FirstUseEver;
             this.AllowClickthrough = false;
             this.AllowPinning = false;
@@ -118,7 +121,7 @@ namespace SettingsEnhanced.UI.Windows
 
         private void DrawConfigUi()
         {
-            if (ImGui.BeginChild("UiWithSidebarChild", new(default, ImGui.GetContentRegionAvail().Y - (20 * ImGuiHelpers.GlobalScale)), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
+            if (ImGui.BeginChild("UiWithSidebarChild", new(default, ImGui.GetContentRegionAvail().Y - (20 * ImGuiHelpers.GlobalScale)), false, NoScrollFlags))
             {
                 if (ImGui.BeginTable("UiWithSidebarTable", 2))
                 {
@@ -132,7 +135,7 @@ namespace SettingsEnhanced.UI.Windows
                     }
                     ImGui.EndChild();
                     ImGui.TableNextColumn();
-                    if (ImGui.BeginChild("MainContent", default, true))
+                    if (ImGui.BeginChild("MainContent", default, true, NoScrollFlags))
                     {
                         this.DrawMainContent();
                     }

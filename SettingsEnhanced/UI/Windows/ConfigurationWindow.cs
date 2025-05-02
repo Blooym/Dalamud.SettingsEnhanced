@@ -8,6 +8,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
 using ImGuiNET;
@@ -111,51 +112,59 @@ namespace SettingsEnhanced.UI.Windows
                 ImGui.TextColored(ImGuiColors.DalamudRed, Strings.UI_Configuration_WarningBackupRequired);
                 return;
             }
-
-            ImGui.BeginDisabled(neverMadeBackup || !ImGui.IsKeyDown(ImGuiKey.LeftShift));
-            if (ImGui.Button(Strings.UI_Configuration_WarningContinueButton))
+            using (ImRaii.Disabled(neverMadeBackup || !ImGui.IsKeyDown(ImGuiKey.LeftShift)))
             {
-                Plugin.PluginConfiguration.UiWarningAccepted = true;
-                Plugin.PluginConfiguration.Save();
+                if (ImGui.Button(Strings.UI_Configuration_WarningContinueButton))
+                {
+                    Plugin.PluginConfiguration.UiWarningAccepted = true;
+                    Plugin.PluginConfiguration.Save();
+                }
             }
-            ImGui.EndDisabled();
             ImGuiComponents.HelpMarker(Strings.UI_Configuration_WarningContinueHint);
         }
 
         private void DrawConfigUi()
         {
-            if (ImGui.BeginChild("UiWithSidebarChild", new(default, ImGui.GetContentRegionAvail().Y - (20 * ImGuiHelpers.GlobalScale)), false, NoScrollFlags))
+            using (var uiMainChild = ImRaii.Child("UiWithSidebarChild", new(default, ImGui.GetContentRegionAvail().Y - (20 * ImGuiHelpers.GlobalScale)), false, NoScrollFlags))
             {
-                if (ImGui.BeginTable("UiWithSidebarTable", 2))
+                if (uiMainChild)
                 {
-                    ImGui.TableSetupColumn("Sidebar", ImGuiTableColumnFlags.WidthFixed, ImGui.GetContentRegionAvail().X * 0.28f);
-                    ImGui.TableSetupColumn("Main", ImGuiTableColumnFlags.WidthStretch);
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
-                    if (ImGui.BeginChild("SidebarChild", default, true))
+                    using (var sidebarTable = ImRaii.Table("UiWithSidebarTable", 2))
                     {
-                        this.DrawSidebar();
+                        if (sidebarTable)
+                        {
+                            ImGui.TableSetupColumn("Sidebar", ImGuiTableColumnFlags.WidthFixed, ImGui.GetContentRegionAvail().X * 0.28f);
+                            ImGui.TableSetupColumn("Main", ImGuiTableColumnFlags.WidthStretch);
+                            ImGui.TableNextRow();
+                            ImGui.TableNextColumn();
+                            using (var sidebarChild = ImRaii.Child("SidebarChild", default, true))
+                            {
+                                if (sidebarChild)
+                                {
+                                    this.DrawSidebar();
+                                }
+                            }
+                            ImGui.TableNextColumn();
+                            using (var mainContentChild = ImRaii.Child("MainContent", default, true, NoScrollFlags))
+                            {
+                                if (mainContentChild)
+                                {
+                                    this.DrawMainContent();
+                                }
+                            }
+                        }
                     }
-                    ImGui.EndChild();
-                    ImGui.TableNextColumn();
-                    if (ImGui.BeginChild("MainContent", default, true, NoScrollFlags))
-                    {
-                        this.DrawMainContent();
-                    }
-                    ImGui.EndChild();
-                    ImGui.EndTable();
                 }
-            }
-            ImGui.EndChild();
-            if (Plugin.PluginConfiguration.UiConfigurationOverwritten || Plugin.PluginConfiguration.SystemConfigurationOverwritten)
-            {
-                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudYellow, Strings.UI_Configuration_SettingsType_Zone_Title);
-                ImGuiComponents.HelpMarker(Strings.UI_Configuration_SettingsType_Zone_Description, FontAwesomeIcon.QuestionCircle);
-            }
-            else
-            {
-                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.HealerGreen, Strings.UI_Configuration_SettingsType_Game_Title);
-                ImGuiComponents.HelpMarker(Strings.UI_Configuration_SettingsType_Game_Description, FontAwesomeIcon.QuestionCircle);
+                if (Plugin.PluginConfiguration.UiConfigurationOverwritten || Plugin.PluginConfiguration.SystemConfigurationOverwritten)
+                {
+                    ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudYellow, Strings.UI_Configuration_SettingsType_Zone_Title);
+                    ImGuiComponents.HelpMarker(Strings.UI_Configuration_SettingsType_Zone_Description, FontAwesomeIcon.QuestionCircle);
+                }
+                else
+                {
+                    ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.HealerGreen, Strings.UI_Configuration_SettingsType_Game_Title);
+                    ImGuiComponents.HelpMarker(Strings.UI_Configuration_SettingsType_Game_Description, FontAwesomeIcon.QuestionCircle);
+                }
             }
         }
 
@@ -168,55 +177,52 @@ namespace SettingsEnhanced.UI.Windows
                         || Plugin.PluginConfiguration.TerritoryUiConfiguration.ContainsKey((ushort)x.Key))
                 .OrderByDescending(g => g.Key);
 
-            if (ImGui.BeginChild("SearchbarChild", new(0, (25 * ImGuiHelpers.GlobalScale) - ImGui.GetContentRegionAvail().Y)))
+            using (var searchbarChild = ImRaii.Child("SearchbarChild", new(0, (25 * ImGuiHelpers.GlobalScale) - ImGui.GetContentRegionAvail().Y)))
             {
-                ImGui.SetNextItemWidth(-1);
-                ImGui.InputTextWithHint("##Searchbar", "Search...", ref this.searchText, 50);
-            }
-            ImGui.EndChild();
-            ImGui.Separator();
-
-            if (ImGui.BeginChild("SearchResultsChild"))
-            {
-                foreach (var group in grouped)
+                if (searchbarChild)
                 {
-                    var hasSettings = group.Key;
-                    ImGui.TextDisabled(hasSettings ? Strings.UI_Configuration_Zonelist_CustomSettings : Strings.UI_Configuration_Zonelist_DefaultSettings);
-                    foreach (var (id, name) in group)
-                    {
-                        var currentTerritory = Plugin.ClientState.TerritoryType == id;
-                        if (currentTerritory)
-                        {
-                            ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudViolet);
-                        }
-
-                        if (ImGui.Selectable($"{name}##{id}", id == this.selectedItem?.TerritoryId))
-                        {
-                            this.selectedItem = new()
-                            {
-                                TerritoryId = (ushort)id,
-                                TerritoryName = name,
-                                SystemConfiguration = Plugin.PluginConfiguration.TerritorySystemConfiguration
-                                .GetValueOrDefault(
-                                    (ushort)id,
-                                    ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllProperties()
-
-                                ),
-                                UiConfiguration = Plugin.PluginConfiguration.TerritoryUiConfiguration.GetValueOrDefault(
-                                    (ushort)id,
-                                    ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.CurrentPlayerContentId].Clone()).DepersistAllProperties()
-                                )
-                            };
-                        }
-                        if (currentTerritory)
-                        {
-                            ImGui.PopStyleColor();
-                        }
-                    }
-                    ImGuiHelpers.ScaledDummy(8);
+                    ImGui.SetNextItemWidth(-1);
+                    ImGui.InputTextWithHint("##Searchbar", "Search...", ref this.searchText, 50);
                 }
             }
-            ImGui.EndChild();
+            ImGui.Separator();
+
+            using (var searchResultsChild = ImRaii.Child("SearchResultsChild"))
+            {
+                if (searchResultsChild)
+                {
+                    foreach (var group in grouped)
+                    {
+                        var hasSettings = group.Key;
+                        ImGui.TextDisabled(hasSettings ? Strings.UI_Configuration_Zonelist_CustomSettings : Strings.UI_Configuration_Zonelist_DefaultSettings);
+                        foreach (var (id, name) in group)
+                        {
+                            using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.DalamudViolet, id == Plugin.ClientState.TerritoryType))
+                            {
+                                if (ImGui.Selectable($"{name}##{id}", id == this.selectedItem?.TerritoryId))
+                                {
+                                    this.selectedItem = new()
+                                    {
+                                        TerritoryId = (ushort)id,
+                                        TerritoryName = name,
+                                        SystemConfiguration = Plugin.PluginConfiguration.TerritorySystemConfiguration
+                                        .GetValueOrDefault(
+                                            (ushort)id,
+                                            ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllProperties()
+
+                                        ),
+                                        UiConfiguration = Plugin.PluginConfiguration.TerritoryUiConfiguration.GetValueOrDefault(
+                                            (ushort)id,
+                                            ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.CurrentPlayerContentId].Clone()).DepersistAllProperties()
+                                        )
+                                    };
+                                }
+                            }
+                        }
+                        ImGuiHelpers.ScaledDummy(8);
+                    }
+                }
+            }
         }
 
         private void DrawMainContent()
@@ -225,97 +231,107 @@ namespace SettingsEnhanced.UI.Windows
             {
                 ImGui.TextDisabled(this.selectedItem.TerritoryName);
                 ImGui.Separator();
-                if (ImGui.BeginChild("ConfigurationContent", new(default, ImGui.GetContentRegionAvail().Y - (26 * ImGuiHelpers.GlobalScale))))
+                using (var configContentChild = ImRaii.Child("ConfigurationContent", new(default, ImGui.GetContentRegionAvail().Y - (26 * ImGuiHelpers.GlobalScale))))
                 {
-                    if (ImGui.BeginTabBar("ConfigTabs"))
+                    if (configContentChild)
                     {
-                        if (ImGui.BeginTabItem(Strings.UI_Configuration_ZoneConfig_SystemConfig))
+                        using (var configTabBar = ImRaii.TabBar("ConfigTabs"))
                         {
-                            if (ImGui.BeginChild("SystemConfChild"))
+                            if (configTabBar)
                             {
-                                foreach (var group in SystemConfigurationItemsGroup)
+                                using (var tabItem = ImRaii.TabItem(Strings.UI_Configuration_ZoneConfig_SystemConfig))
                                 {
-                                    if (ImGui.CollapsingHeader(group.Key))
+                                    if (tabItem)
                                     {
-                                        this.DrawConfigurationGroup(group, this.selectedItem.SystemConfiguration);
+                                        using var configChild = ImRaii.Child("SystemConfChild");
+                                        if (configChild)
+                                        {
+                                            foreach (var group in SystemConfigurationItemsGroup)
+                                            {
+                                                if (ImGui.CollapsingHeader(group.Key))
+                                                {
+                                                    this.DrawConfigurationGroup(group, this.selectedItem.SystemConfiguration);
+                                                }
+                                            }
+                                        }
                                     }
                                 }
-                            }
-                            ImGui.EndChild();
-                            ImGui.EndTabItem();
-                        }
 
-                        if (ImGui.BeginTabItem(Strings.UI_Configuration_ZoneConfig_CharaConfig))
-                        {
-                            if (ImGui.BeginChild("CharConfigChild"))
-                            {
-                                foreach (var group in UiConfigurationItemsGroup)
+                                using (var tabItem = ImRaii.TabItem(Strings.UI_Configuration_ZoneConfig_CharaConfig))
                                 {
-                                    if (ImGui.CollapsingHeader(group.Key))
+                                    if (tabItem)
                                     {
-                                        this.DrawConfigurationGroup(group, this.selectedItem.UiConfiguration);
+                                        using var configChild = ImRaii.Child("CharConfigChild");
+                                        if (configChild)
+                                        {
+                                            foreach (var group in UiConfigurationItemsGroup)
+                                            {
+                                                if (ImGui.CollapsingHeader(group.Key))
+                                                {
+                                                    this.DrawConfigurationGroup(group, this.selectedItem.UiConfiguration);
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
-                            ImGui.EndChild();
-                            ImGui.EndTabItem();
                         }
                     }
-                    ImGui.EndTabBar();
                 }
-                ImGui.EndChild();
                 ImGui.Separator();
 
-                ImGui.BeginDisabled(!this.canSaveSettings);
-                if (ImGui.Button(Strings.UI_Configuration_ZoneConfig_ApplyButton))
+                using (ImRaii.Disabled(!this.canSaveSettings))
                 {
-                    // Set or remove configurations depending on if they have any persists left.
-                    if (this.selectedItem.SystemConfiguration.AnyPersistedProperties())
+                    if (ImGui.Button(Strings.UI_Configuration_ZoneConfig_ApplyButton))
                     {
-                        Plugin.PluginConfiguration.TerritorySystemConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.SystemConfiguration;
-                    }
-                    else
-                    {
-                        Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId);
-                    }
+                        // Set or remove configurations depending on if they have any persists left.
+                        if (this.selectedItem.SystemConfiguration.AnyPersistedProperties())
+                        {
+                            Plugin.PluginConfiguration.TerritorySystemConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.SystemConfiguration;
+                        }
+                        else
+                        {
+                            Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId);
+                        }
 
-                    if (this.selectedItem.UiConfiguration.AnyPersistedProperties())
-                    {
-                        Plugin.PluginConfiguration.TerritoryUiConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.UiConfiguration;
-                    }
-                    else
-                    {
-                        Plugin.PluginConfiguration.TerritoryUiConfiguration.Remove(this.selectedItem.TerritoryId);
-                    }
+                        if (this.selectedItem.UiConfiguration.AnyPersistedProperties())
+                        {
+                            Plugin.PluginConfiguration.TerritoryUiConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.UiConfiguration;
+                        }
+                        else
+                        {
+                            Plugin.PluginConfiguration.TerritoryUiConfiguration.Remove(this.selectedItem.TerritoryId);
+                        }
 
-                    Plugin.PluginConfiguration.Save();
-                    ConfigurationUpdated?.Invoke();
-                    this.canSaveSettings = false;
-                }
-                ImGui.EndDisabled();
-                ImGui.SameLine();
-                ImGui.BeginDisabled(!ImGui.IsKeyDown(ImGuiKey.LeftShift));
-                if (ImGui.Button(Strings.UI_Configuration_ZoneConfig_DeleteButton))
-                {
-                    this.canSaveSettings = false;
-                    var configsDeleted = false;
-                    if (Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId))
-                    {
-                        this.selectedItem.SystemConfiguration = ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllProperties();
-                        configsDeleted = true;
-                    }
-                    if (Plugin.PluginConfiguration.TerritoryUiConfiguration.Remove(this.selectedItem.TerritoryId))
-                    {
-                        this.selectedItem.UiConfiguration = ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.ClientState.LocalContentId].Clone()).DepersistAllProperties();
-                        configsDeleted = true;
-                    }
-                    if (configsDeleted)
-                    {
                         Plugin.PluginConfiguration.Save();
                         ConfigurationUpdated?.Invoke();
+                        this.canSaveSettings = false;
                     }
                 }
-                ImGui.EndDisabled();
+                ImGui.SameLine();
+                using (ImRaii.Disabled(!ImGui.IsKeyDown(ImGuiKey.LeftShift)))
+                {
+                    if (ImGui.Button(Strings.UI_Configuration_ZoneConfig_DeleteButton))
+                    {
+                        this.canSaveSettings = false;
+                        var configsDeleted = false;
+                        if (Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId))
+                        {
+                            this.selectedItem.SystemConfiguration = ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllProperties();
+                            configsDeleted = true;
+                        }
+                        if (Plugin.PluginConfiguration.TerritoryUiConfiguration.Remove(this.selectedItem.TerritoryId))
+                        {
+                            this.selectedItem.UiConfiguration = ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.ClientState.LocalContentId].Clone()).DepersistAllProperties();
+                            configsDeleted = true;
+                        }
+                        if (configsDeleted)
+                        {
+                            Plugin.PluginConfiguration.Save();
+                            ConfigurationUpdated?.Invoke();
+                        }
+                    }
+                }
                 ImGuiComponents.HelpMarker(Strings.UI_Configuration_ZoneConfig_DeleteButton_Hint);
             }
         }
@@ -374,38 +390,40 @@ namespace SettingsEnhanced.UI.Windows
 
         private void DrawPropertyResetButton<T>(T configuration, PropertyInfo prop) where T : IGameConfiguration<T>
         {
-            ImGui.BeginDisabled(!configuration.IsPropertyPersisted(prop));
-            if (ImGuiComponents.IconButton(prop.Name, FontAwesomeIcon.Sync))
+            using (ImRaii.Disabled(!configuration.IsPropertyPersisted(prop)))
             {
-                if (typeof(T) == typeof(UiConfiguration))
+                if (ImGuiComponents.IconButton(prop.Name, FontAwesomeIcon.Sync))
                 {
-                    if (Plugin.PluginConfiguration.OriginalUiConfiguration.TryGetValue(Plugin.CurrentPlayerContentId, out var uiConfig))
+                    if (typeof(T) == typeof(UiConfiguration))
                     {
-                        var propertyValue = typeof(UiConfiguration).GetProperty(prop.Name)?.GetValue(uiConfig);
-                        if (propertyValue != null)
+                        if (Plugin.PluginConfiguration.OriginalUiConfiguration.TryGetValue(Plugin.CurrentPlayerContentId, out var uiConfig))
                         {
-                            configuration.SetPropertyValue(prop, propertyValue);
+                            var propertyValue = typeof(UiConfiguration).GetProperty(prop.Name)?.GetValue(uiConfig);
+                            if (propertyValue != null)
+                            {
+                                configuration.SetPropertyValue(prop, propertyValue);
+                                configuration.DepersistProperty(prop);
+                                this.canSaveSettings = true;
+                            }
+                            else
+                            {
+                                Plugin.Log.Error($"Failed to reset setting: {prop.Name} does not have value on original ui configuration for current character");
+                            }
+                        }
+                    }
+                    else if (typeof(T) == typeof(SystemConfiguration))
+                    {
+                        var defaultValue = typeof(SystemConfiguration).GetProperty(prop.Name)?.GetValue(Plugin.PluginConfiguration.OriginalSystemConfiguration);
+                        if (defaultValue is not null)
+                        {
+                            configuration.SetPropertyValue(prop, defaultValue);
                             configuration.DepersistProperty(prop);
                             this.canSaveSettings = true;
                         }
                         else
                         {
-                            Plugin.Log.Error($"Failed to reset setting: {prop.Name} does not have value on original ui configuration for current character");
+                            Plugin.Log.Error($"Failed to reset system setting: {prop.Name} does not have value on original system configuration");
                         }
-                    }
-                }
-                else if (typeof(T) == typeof(SystemConfiguration))
-                {
-                    var defaultValue = typeof(SystemConfiguration).GetProperty(prop.Name)?.GetValue(Plugin.PluginConfiguration.OriginalSystemConfiguration);
-                    if (defaultValue is not null)
-                    {
-                        configuration.SetPropertyValue(prop, defaultValue);
-                        configuration.DepersistProperty(prop);
-                        this.canSaveSettings = true;
-                    }
-                    else
-                    {
-                        Plugin.Log.Error($"Failed to reset system setting: {prop.Name} does not have value on original system configuration");
                     }
                 }
             }
@@ -413,7 +431,6 @@ namespace SettingsEnhanced.UI.Windows
             {
                 ImGui.SetTooltip(Strings.UI_Configuration_ZoneConfig_ResetToDefault);
             }
-            ImGui.EndDisabled();
         }
 
         private void DrawEnumProperty<T>(T configuration, PropertyInfo prop, string displayName) where T : IGameConfiguration<T>
@@ -430,19 +447,21 @@ namespace SettingsEnhanced.UI.Windows
                 }
             );
             var displayValue = value is not null && displayNames.TryGetValue(value, out var name) ? name : Strings.UI_Configuration_ZoneConfig_EnumFallback;
-            if (ImGui.BeginCombo(displayName, displayValue))
+            using (var combo = ImRaii.Combo(displayName, displayValue))
             {
-                foreach (var enumValue in enumValues)
+                if (combo)
                 {
-                    var isSelected = enumValue.Equals(value);
-                    if (ImGui.Selectable(displayNames[enumValue], isSelected))
+                    foreach (var enumValue in enumValues)
                     {
-                        configuration.SetPropertyValue(prop, Enum.ToObject(prop.PropertyType, enumValue));
-                        configuration.PersistProperty(prop);
-                        this.canSaveSettings = true;
+                        var isSelected = enumValue.Equals(value);
+                        if (ImGui.Selectable(displayNames[enumValue], isSelected))
+                        {
+                            configuration.SetPropertyValue(prop, Enum.ToObject(prop.PropertyType, enumValue));
+                            configuration.PersistProperty(prop);
+                            this.canSaveSettings = true;
+                        }
                     }
                 }
-                ImGui.EndCombo();
             }
         }
 

@@ -20,66 +20,66 @@ namespace SettingsEnhanced.Game.Settings
         // Do not change the Property Name of these, it'll break a configuration file.
 
         [SystemConfigurationItem(SystemConfigOption.SoundMaster)]
-        [UiDisplayInfo("Master", "Sound Settings", "Volume Settings")]
+        [UiSettingPropDisplay(4047, 4171, 4046)]
         [ConfigurationInputRange(0, 100)]
         public uint MasterVolume { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.SoundBgm)]
-        [UiDisplayInfo("Background Music", "Sound Settings", "Volume Settings")]
+        [UiSettingPropDisplay(8686, 4171, 4046)]
         [ConfigurationInputRange(0, 100)]
         public uint BgmVolume { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.SoundSe)]
-        [UiDisplayInfo("Sound Effects", "Sound Settings", "Volume Settings")]
+        [UiSettingPropDisplay(8687, 4171, 4046)]
         [ConfigurationInputRange(0, 100)]
         public uint SoundEffectVolume { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.SoundVoice)]
-        [UiDisplayInfo("Voices", "Sound Settings", "Volume Settings")]
+        [UiSettingPropDisplay(8688, 4171, 4046)]
         [ConfigurationInputRange(0, 100)]
         public uint VoiceVolume { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.SoundSystem)]
-        [UiDisplayInfo("System Sounds", "Sound Settings", "Volume Settings")]
+        [UiSettingPropDisplay(8689, 4171, 4046)]
         [ConfigurationInputRange(0, 100)]
         public uint SystemSoundsVolume { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.SoundEnv)]
-        [UiDisplayInfo("Ambient Sounds", "Sound Settings", "Volume Settings")]
+        [UiSettingPropDisplay(8690, 4171, 4046)]
         [ConfigurationInputRange(0, 100)]
         public uint AmbientSoundsVolume { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.SoundPerform)]
-        [UiDisplayInfo("Performance Sounds", "Sound Settings", "Volume Settings")]
+        [UiSettingPropDisplay(8685, 4171, 4046)]
         [ConfigurationInputRange(0, 100)]
         public uint PerformanceSoundsVolume { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.SoundPlayer)]
-        [UiDisplayInfo("Player Effects (Self)", "Sound Settings", "Volume Settings")]
+        [UiSettingPropDisplay(4127, 4171, 4126)]
         [ConfigurationInputRange(0, 100)]
         public uint PlayerEffectsSelfVolume { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.SoundParty)]
-        [UiDisplayInfo("Player Effects (Party)", "Sound Settings", "Volume Settings")]
+        [UiSettingPropDisplay(4128, 4171, 4126)]
         [ConfigurationInputRange(0, 100)]
         public uint PlayerEffectsPartyVolume { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.SoundOther)]
-        [UiDisplayInfo("Player Effects (Other PCs)", "Sound Settings", "Volume Settings")]
+        [UiSettingPropDisplay(4129, 4171, 4126)]
         [ConfigurationInputRange(0, 100)]
         public uint PlayerEffectsOtherPCsVolume { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.SoundPad)]
-        [UiDisplayInfo("DualSense Speaker Volume", "Sound Settings", "Dualsense/DUALSHOCK 4 Settings")]
+        [UiSettingPropDisplay(8202, 4171, 8759)]
         [ConfigurationInputRange(0, 100)]
         public uint DualSenseSpeakerVolume { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.DisplayObjectLimitType)]
-        [UiDisplayInfo("Character and Object Quantity", "Other Settings", "Display Limits")]
+        [UiSettingPropDisplay(8205, 4177, 8205)]
         public CharacterObjectQuantity CutsceneAndObjectQuantity { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.ScreenShotDir)]
-        [UiDisplayInfo("##ScreenshotFolder", "Other Settings", "Screenshot Folder")]
+        [UiSettingPropDisplay(0, 4177, 8287)]
         [ConfigurationInputRange(20, 200)]
         public string ScreenshotLocationDir { get; private set; }
 #pragma warning restore CS8618

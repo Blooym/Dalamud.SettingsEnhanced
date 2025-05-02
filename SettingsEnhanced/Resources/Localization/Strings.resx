@@ -104,13 +104,4 @@ Changing any setting you have not overwritten will apply to your global game con
   <data name="UI_Configuration_ZoneConfig_EnumFallback" xml:space="preserve">
     <value>None</value>
   </data>
-  <data name="UI_ConfigOption_Name_MoveMode" xml:space="preserve">
-    <value>Movement Type</value>
-  </data>
-  <data name="UI_ConfigOption_GroupName_ControlSettings" xml:space="preserve">
-    <value>Control Settings</value>
-  </data>
-  <data name="UI_ConfigOptior_HeaderName_MovementSettings" xml:space="preserve">
-    <value>Movement Settings</value>
-  </data>
 </root>

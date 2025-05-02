@@ -9,7 +9,6 @@ using SettingsEnhanced.Game.Settings.Attributes;
 using SettingsEnhanced.Game.Settings.Enums;
 using SettingsEnhanced.Game.Settings.Interfaces;
 using SettingsEnhanced.Game.Settings.Util;
-using SettingsEnhanced.Resources.Localization;
 
 namespace SettingsEnhanced.Game.Settings
 {
@@ -20,161 +19,161 @@ namespace SettingsEnhanced.Game.Settings
 #pragma warning disable CS8618
 
         [UiConfigurationItem(UiControlOption.MoveMode)]
-        [UiDisplayInfo(nameof(Strings.UI_ConfigOption_Name_MoveMode), nameof(Strings.UI_ConfigOption_GroupName_ControlSettings), nameof(Strings.UI_ConfigOptior_HeaderName_MovementSettings))]
+        [UiSettingPropDisplay(7550, 7510, 7550)]
         public MovementType MoveMode { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.BattleEffectSelf)]
-        [UiDisplayInfo("Own", "Character Settings", "Battle Effects Settings")]
+        [UiSettingPropDisplay(7615, 7510, 7618)]
         public BattleEffects BattleEffectSelf { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.BattleEffectParty)]
-        [UiDisplayInfo("Party", "Character Settings", "Battle Effects Settings")]
+        [UiSettingPropDisplay(7616, 7510, 7618)]
         public BattleEffects BattleEffectParty { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.BattleEffectOther)]
-        [UiDisplayInfo("Other (excl. PvP)", "Character Settings", "Battle Effects Settings")]
+        [UiSettingPropDisplay(7617, 7510, 7618)]
         public BattleEffects BattleEffectOther { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.BattleEffectPvPEnemyPc)]
-        [UiDisplayInfo("PvP Opponents", "Character Settings", "Battle Effects Settings")]
+        [UiSettingPropDisplay(7618, 7510, 7618)]
         public BattleEffects BattleEffectPvPOpponent { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.IdleEmoteTime)]
-        [UiDisplayInfo("Idle Animation Delay", "Character Settings", "Animation")]
+        [UiSettingPropDisplay(8254, 4045, 7600)]
         [ConfigurationInputRange(0, 30)]
         public uint IdleAnimationDelay { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.IdleEmoteRandomType)]
-        [UiDisplayInfo("Randomize idle animation", "Character Settings", "Animation")]
+        [UiSettingPropDisplay(8257, 4045, 7600)]
         public bool IdleEmoteRandomType { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.ShopConfirm)]
-        [UiDisplayInfo("Display confirmation when selling items", "Item Settings", "Shop Settings")]
+        [UiSettingPropDisplay(7611, 7517, 7610)]
         public bool ShopConfirmOnSell { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.ShopConfirmMateria)]
-        [UiDisplayInfo("Meldable Items", "Item Settings", "Shop Settings", true)]
+        [UiSettingPropDisplay(7612, 7517, 7610, true)]
         public bool ShopConfirmMeldableItems { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.ShopConfirmSpiritBondMax)]
-        [UiDisplayInfo("Spiritbound Items", "Item Settings", "Shop Settings", true)]
+        [UiSettingPropDisplay(7619, 7517, 7610, true)]
         public bool ShopConfirmSpiritbondMax { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.ShopConfirmExRare)]
-        [UiDisplayInfo("Unique/Untradeable Items", "Item Settings", "Shop Settings", true)]
+        [UiSettingPropDisplay(7612, 7517, 7610, true)]
         public bool ShopConfirmRareItem { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.EmoteTextType)]
-        [UiDisplayInfo("Display Emote Log Message", "Chat Settings", "Emotes")]
+        [UiSettingPropDisplay(8120, 7514, 1911, true)]
         public bool EmoteDisplayLogMessage { get; private set; }
 
         [UiConfigurationItem(UiControlOption.FlyTextDisp)]
-        [UiDisplayInfo("Display flying text", "HUD Settings", "Text")]
+        [UiSettingPropDisplay(7679, 7642, 7650)]
         public bool HudDisplayFlyingText { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.FlyTextDispSize)]
-        [UiDisplayInfo("Flying Text Size", "HUD Settings", "Text", true)]
+        [UiSettingPropDisplay(7697, 7642, 7650)]
         public FlyTextSize HudFlyingTextSize { get; private set; }
 
         [UiConfigurationItem(UiControlOption.PopUpTextDisp)]
-        [UiDisplayInfo("Display pop-up text", "HUD Settings", "Text")]
+        [UiSettingPropDisplay(10268, 7642, 7650)]
         public bool HudDisplayPopupText { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.FlyTextDispSize)]
-        [UiDisplayInfo("Pop-up Text Size", "HUD Settings", "Text", true)]
+        [UiSettingPropDisplay(10269, 7642, 7650)]
         public PopupTextSize HudPopupTextSize { get; private set; }
 
         [UiConfigurationItem(UiControlOption.CharaParamDisp)]
-        [UiDisplayInfo("Display parameter bars", "HUD Settings")]
+        [UiSettingPropDisplay(7651, 7642, 7650)]
         public bool HudDisplayParameterBars { get; private set; }
 
         [UiConfigurationItem(UiControlOption.ExpDisp)]
-        [UiDisplayInfo("Display EXP bar", "HUD Settings")]
+        [UiSettingPropDisplay(7652, 7642, 7650)]
         public bool HudDisplayExpBar { get; private set; }
 
         [UiConfigurationItem(UiControlOption.InventryStatusDisp)]
-        [UiDisplayInfo("Display inventory grid", "HUD Settings")]
+        [UiSettingPropDisplay(7654, 7642, 7650)]
         public bool HudDisplayInventoryGrid { get; private set; }
 
         [UiConfigurationItem(UiControlOption.DutyListDisp)]
-        [UiDisplayInfo("Display duty list", "HUD Settings", "Duty List")]
+        [UiSettingPropDisplay(7655, 7642, 7650)]
         public bool HudDisplayDutyList { get; private set; }
 
         [UiConfigurationItem(UiControlOption.DutyListNumDisp)]
-        [UiDisplayInfo("Number of Duties Displayed", "HUD Settings", "Duty List", true)]
+        [UiSettingPropDisplay(8075, 7642, 7650, true)]
         [ConfigurationInputRange(1, 10)]
         public uint HudDisplayDutyCount { get; private set; }
 
         [UiConfigurationItem(UiControlOption.InInstanceContentDutyListDisp)]
-        [UiDisplayInfo("Hide duty list during instanced duty", "HUD Settings", "Duty List", true)]
+        [UiSettingPropDisplay(10225, 7642, 7650, true)]
         public bool HudDisplayDutyListInstanceDuty { get; private set; }
 
         [UiConfigurationItem(UiControlOption.InPublicContentDutyListDisp)]
-        [UiDisplayInfo("Hide duty list during non-instanced duty", "HUD Settings", "Duty List", true)]
+        [UiSettingPropDisplay(10229, 7642, 7650, true)]
         public bool HudDisplayDutyListNonInstanceDuty { get; private set; }
 
         [UiConfigurationItem(UiControlOption.ContentsInfoJoiningRequestDisp)]
-        [UiDisplayInfo("Display registered duties in Timers", "HUD Settings", "Duty List", true)]
+        [UiSettingPropDisplay(7708, 7642, 7650, true)]
         public bool HudDisplayRegisteredDutiesTimers { get; private set; }
 
         [UiConfigurationItem(UiControlOption.ContentsInfoJoiningRequestSituationDisp)]
-        [UiDisplayInfo("Display duty registration details in Timers", "HUD Settings", "Duty List", true)]
+        [UiSettingPropDisplay(7709, 7642, 7650, true)]
         public bool HudDisplayRegisteredDutyDetailTimers { get; private set; }
 
         [UiConfigurationItem(UiControlOption.NaviMapDisp)]
-        [UiDisplayInfo("Display minimap", "HUD Settings")]
+        [UiSettingPropDisplay(7656, 7642, 7650)]
         public bool HudDisplayMinimap { get; private set; }
 
         [UiConfigurationItem(UiControlOption.GilStatusDisp)]
-        [UiDisplayInfo("Display gil", "HUD Settings")]
+        [UiSettingPropDisplay(7657, 7642, 7650)]
         public bool HudDisplayGil { get; private set; }
 
         [UiConfigurationItem(UiControlOption.InfoSettingDisp)]
-        [UiDisplayInfo("Display server info", "HUD Settings", "Server Info Bar")]
+        [UiSettingPropDisplay(7668, 7642, 7650)]
         public bool HudDisplayServerInfo { get; private set; }
 
         [UiConfigurationItem(UiControlOption.InfoSettingDispType)]
-        [UiDisplayInfo("Clock Type", "HUD Settings", "Server Info Bar")]
+        [UiSettingPropDisplay(7699, 7642, 7650)]
         public ServerClockType HudDisplayServerClockType { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.TimeEorzea)]
-        [UiDisplayInfo("Eorzea Time", "HUD Settings", "Server Info Bar", true)]
+        [UiSettingPropDisplay(8065, 7642, 7650, true)]
         public bool HudDisplayServerInfoEorzeaTime { get; set; }
 
         [UiConfigurationItem(UiConfigOption.TimeLocal)]
-        [UiDisplayInfo("Local Time", "HUD Settings", "Server Info Bar", true)]
+        [UiSettingPropDisplay(8066, 7642, 7650, true)]
         public bool HudDisplayServerInfoLocalTime { get; set; }
 
         [UiConfigurationItem(UiConfigOption.TimeServer)]
-        [UiDisplayInfo("Server Time", "HUD Settings", "Server Info Bar", true)]
+        [UiSettingPropDisplay(8067, 7642, 7650, true)]
         public bool HudDisplayServerInfoServerTIme { get; set; }
 
         [UiConfigurationItem(UiConfigOption.InfoSettingDispWorldNameType)]
-        [UiDisplayInfo("Display current World nameKey", "HUD Settings", "Server Info Bar", true)]
+        [UiSettingPropDisplay(7734, 7642, 7650, true)]
         public bool HudDisplayServerInfoCurrentWorld { get; set; }
 
         [UiConfigurationItem(UiControlOption.LimitBreakGaugeDisp)]
-        [UiDisplayInfo("Display limit gauge", "HUD Settings")]
+        [UiSettingPropDisplay(7831, 7642, 7650)]
         public bool HudDisplayLimitGauge { get; private set; }
 
         [UiConfigurationItem(UiControlOption.ScenarioTreeCompleteDisp)]
-        [UiDisplayInfo("Display Main Scenario Guide", "HUD Settings", "Main Scenario")]
+        [UiSettingPropDisplay(10277, 7642, 7650)]
         public bool HudDisplayScenarioInfo { get; private set; }
 
         [UiConfigurationItem(UiControlOption.ScenarioTreeCompleteDisp)]
-        [UiDisplayInfo("Hide when all quests complete", "HUD Settings", "Main Scenario", true)]
+        [UiSettingPropDisplay(10278, 7642, 7650, true)]
         public bool HudHideScenarioComplete { get; private set; }
 
         [UiConfigurationItem(UiConfigOption.BattleTalkShowFace)]
-        [UiDisplayInfo("Display character portraits with battle dialogue widget", "HUD Settings")]
+        [UiSettingPropDisplay(10321, 7642, 7650)]
         public bool HudDisplayBattleTextPortraits { get; private set; }
 
         [UiConfigurationItem(UiControlOption.PartyListDisp)]
-        [UiDisplayInfo("Display party list", "HUD Settings", "Party List")]
+        [UiSettingPropDisplay(7671, 7642, 7670)]
         public bool HudDisplayPartyList { get; private set; }
 
         [UiConfigurationItem(UiControlOption.PartyListSoloOff)]
-        [UiDisplayInfo("Hide party list when solo", "HUD Settings", "Party List", true)]
+        [UiSettingPropDisplay(7673, 7642, 7670, true)]
         public bool HudHidePartyListSolo { get; private set; }
 
 #pragma warning restore CS8618

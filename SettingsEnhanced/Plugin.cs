@@ -7,6 +7,7 @@ using Dalamud.Interface.ImGuiNotification;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using SettingsEnhanced.Configuration;
 using SettingsEnhanced.Game.Settings;
@@ -33,6 +34,7 @@ namespace SettingsEnhanced
         private static WindowManager WindowManager { get; set; }
         private static LocalizationManager LocalizationManager { get; set; }
         public static PluginConfiguration PluginConfiguration { get; private set; }
+        public static ExcelSheet<Addon> AddonSheet;
         public static IEnumerable<TerritoryType> AllowedTerritories;
 #pragma warning restore CS8618
 
@@ -59,6 +61,7 @@ namespace SettingsEnhanced
         public Plugin()
         {
             LocalizationManager = new();
+            AddonSheet = DataManager.Excel.GetSheet<Addon>();
             AllowedTerritories = DataManager.Excel.GetSheet<TerritoryType>().Where(x => AllowedTerritoryUse.Contains(x.TerritoryIntendedUse.RowId) && !x.IsPvpZone);
             PluginConfiguration = PluginConfiguration.Load();
 

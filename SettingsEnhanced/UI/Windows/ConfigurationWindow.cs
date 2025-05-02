@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using Dalamud.Game.Config;
@@ -29,28 +30,28 @@ namespace SettingsEnhanced.UI.Windows
         }
 
         private const ImGuiWindowFlags NoScrollFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
-
         private static readonly Dictionary<uint, string> TerritoryList = Plugin.AllowedTerritories
-            .Where(t => !string.IsNullOrEmpty(t.PlaceName.Value.Name.ExtractText())
-            )
-            .OrderBy(x => x.PlaceName.Value.Name.ExtractText())
-            .ToDictionary(
-                t => t.RowId,
-                t => t.PlaceName.Value.Name.ExtractText()
-            );
-
-        private static readonly IOrderedEnumerable<IGrouping<string, PropertyInfo>> SystemConfigurationItemsGroup = typeof(SystemConfiguration)
-            .GetProperties(Plugin.ConfigReflectionBindingFlags)
-            .Where(p => p.GetCustomAttribute<SystemConfigurationItemAttribute>() != null)
-            .GroupBy(p => p.GetCustomAttribute<UiDisplayInfoAttribute>()!.InterfaceGroupName)
-            .OrderBy(g => g.Key);
-
-        private static readonly IOrderedEnumerable<IGrouping<string, PropertyInfo>> UiConfigurationItemsGroup = typeof(UiConfiguration)
-            .GetProperties(Plugin.ConfigReflectionBindingFlags)
-            .Where(p => p.GetCustomAttribute<UiConfigurationItemAttribute>() != null)
-            .GroupBy(p => p.GetCustomAttribute<UiDisplayInfoAttribute>()!.InterfaceGroupName)
-            .OrderBy(g => g.Key);
-
+                .Where(t => !string.IsNullOrEmpty(t.PlaceName.Value.Name.ExtractText())
+                )
+                .OrderBy(x => x.PlaceName.Value.Name.ExtractText())
+                .ToDictionary(
+                    t => t.RowId,
+                    t => t.PlaceName.Value.Name.ExtractText()
+                );
+        private static readonly ImmutableArray<IGrouping<string, (PropertyInfo, UiSettingPropDisplayAttribute)>> SystemConfigurationItemsGroup =
+            [.. typeof(SystemConfiguration)
+                .GetProperties(Plugin.ConfigReflectionBindingFlags)
+                .Where(p => p.GetCustomAttribute<SystemConfigurationItemAttribute>() != null)
+                .Select(p => (Property: p, Attribute: p.GetCustomAttribute<UiSettingPropDisplayAttribute>()!))
+                .GroupBy(x => x.Attribute.UiGroup)
+                .OrderBy(g => g.Key)];
+        private static readonly ImmutableArray<IGrouping<string, (PropertyInfo, UiSettingPropDisplayAttribute)>> UiConfigurationItemsGroup =
+            [.. typeof(UiConfiguration)
+                .GetProperties(Plugin.ConfigReflectionBindingFlags)
+                .Where(p => p.GetCustomAttribute<UiConfigurationItemAttribute>() != null)
+                .Select(p => (Property: p, Attribute: p.GetCustomAttribute<UiSettingPropDisplayAttribute>()!))
+                .GroupBy(x => x.Attribute.UiGroup)
+                .OrderBy(g => g.Key)];
 
         private string searchText = "";
         private bool canSaveSettings;
@@ -161,7 +162,7 @@ namespace SettingsEnhanced.UI.Windows
         private void DrawSidebar()
         {
             var filtered = TerritoryList
-                                .Where(x => x.Value.Contains(this.searchText, StringComparison.InvariantCultureIgnoreCase));
+                .Where(x => x.Value.Contains(this.searchText, StringComparison.InvariantCultureIgnoreCase));
             var grouped = filtered
                 .GroupBy(x => Plugin.PluginConfiguration.TerritorySystemConfiguration.ContainsKey((ushort)x.Key)
                         || Plugin.PluginConfiguration.TerritoryUiConfiguration.ContainsKey((ushort)x.Key))
@@ -319,10 +320,10 @@ namespace SettingsEnhanced.UI.Windows
             }
         }
 
-        private void DrawConfigurationGroup<TConfig>(IGrouping<string, PropertyInfo> group, TConfig configuration) where TConfig : IGameConfiguration<TConfig>
+        private void DrawConfigurationGroup<TConfig>(IGrouping<string, (PropertyInfo propInfo, UiSettingPropDisplayAttribute displayInfo)> group, TConfig configuration) where TConfig : IGameConfiguration<TConfig>
         {
             var subGroups = group
-                .GroupBy(p => p.GetCustomAttribute<UiDisplayInfoAttribute>()!.InterfaceHeaderName)
+                .GroupBy(p => p.displayInfo.UiHeader)
                 .OrderBy(g => g.Key);
             foreach (var subGroup in subGroups)
             {
@@ -331,20 +332,17 @@ namespace SettingsEnhanced.UI.Windows
                     ImGui.TextDisabled(subGroup.Key);
                 }
 
-                foreach (var prop in subGroup)
+                foreach (var (propInfo, displayInfo) in subGroup)
                 {
-                    this.DrawConfigurationProperty(prop, configuration);
+                    this.DrawConfigurationProperty(propInfo, displayInfo, configuration);
                 }
                 ImGuiHelpers.ScaledDummy(6);
             }
         }
 
-        private void DrawConfigurationProperty<TConfig>(PropertyInfo prop, TConfig configuration) where TConfig : IGameConfiguration<TConfig>
+        private void DrawConfigurationProperty<TConfig>(PropertyInfo prop, UiSettingPropDisplayAttribute display, TConfig configuration) where TConfig : IGameConfiguration<TConfig>
         {
-            var configOptionAttribute = prop.GetCustomAttribute<UiDisplayInfoAttribute>();
-            var displayName = configOptionAttribute?.InterfaceName ?? prop.Name;
-
-            if (configOptionAttribute?.InterfaceIndented is true)
+            if (display.UiIndented)
             {
                 ImGui.Indent();
             }
@@ -353,22 +351,22 @@ namespace SettingsEnhanced.UI.Windows
 
             if (prop.PropertyType.IsEnum)
             {
-                this.DrawEnumProperty(configuration, prop, displayName);
+                this.DrawEnumProperty(configuration, prop, display.UiName);
             }
             else if (prop.PropertyType == typeof(uint))
             {
-                this.DrawUintProperty(configuration, prop, displayName);
+                this.DrawUintProperty(configuration, prop, display.UiName);
             }
             else if (prop.PropertyType == typeof(bool))
             {
-                this.DrawBoolProperty(configuration, prop, displayName);
+                this.DrawBoolProperty(configuration, prop, display.UiName);
             }
             else if (prop.PropertyType == typeof(string))
             {
-                this.DrawStringProperty(configuration, prop, displayName);
+                this.DrawStringProperty(configuration, prop, display.UiName);
             }
 
-            if (configOptionAttribute?.InterfaceIndented is true)
+            if (display.UiIndented)
             {
                 ImGui.Unindent();
             }
@@ -420,14 +418,24 @@ namespace SettingsEnhanced.UI.Windows
 
         private void DrawEnumProperty<T>(T configuration, PropertyInfo prop, string displayName) where T : IGameConfiguration<T>
         {
+            // TODO: Optimise this to pre-compute names at startup
             var enumValues = Enum.GetValues(prop.PropertyType).Cast<Enum>().ToArray();
             var value = prop.GetValue(configuration) as Enum;
-            if (ImGui.BeginCombo(displayName, value?.ToString() ?? Strings.UI_Configuration_ZoneConfig_EnumFallback))
+            var displayNames = enumValues.ToDictionary(
+                ev => ev,
+                ev =>
+                {
+                    var member = ev.GetType().GetMember(ev.ToString()).FirstOrDefault();
+                    return member?.GetCustomAttribute<UiSettingEnumAddonIdAttribute>()?.UiName ?? ev.ToString();
+                }
+            );
+            var displayValue = value is not null && displayNames.TryGetValue(value, out var name) ? name : Strings.UI_Configuration_ZoneConfig_EnumFallback;
+            if (ImGui.BeginCombo(displayName, displayValue))
             {
                 foreach (var enumValue in enumValues)
                 {
                     var isSelected = enumValue.Equals(value);
-                    if (ImGui.Selectable(enumValue.ToString(), isSelected))
+                    if (ImGui.Selectable(displayNames[enumValue], isSelected))
                     {
                         configuration.SetPropertyValue(prop, Enum.ToObject(prop.PropertyType, enumValue));
                         configuration.PersistProperty(prop);

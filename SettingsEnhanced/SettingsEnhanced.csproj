@@ -13,6 +13,7 @@
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
+
   <ItemGroup>
     <EmbeddedResource Update="Resources\Localization\Strings.resx">
       <Generator>ResXFileCodeGenerator</Generator>

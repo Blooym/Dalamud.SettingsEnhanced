@@ -294,7 +294,6 @@ namespace SettingsEnhanced.Game.Settings
                     }
                 }
                 onlyPersisted.WriteTo(writer);
-
             }
 
             public override SystemConfiguration ReadJson(JsonReader reader, Type objectType, SystemConfiguration? existingValue, bool hasExistingValue, JsonSerializer serializer)

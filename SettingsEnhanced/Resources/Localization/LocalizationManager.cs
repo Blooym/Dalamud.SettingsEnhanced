@@ -10,7 +10,7 @@ namespace SettingsEnhanced.Resources.Localization
         /// <summary>
         ///     Creates a new resource manager and sets up resources.
         /// </summary>
-        private LocalizationManager()
+        public LocalizationManager()
         {
             SetupLocalization(Plugin.PluginInterface.UiLanguage);
             Plugin.PluginInterface.LanguageChanged += SetupLocalization;
@@ -38,6 +38,7 @@ namespace SettingsEnhanced.Resources.Localization
         {
             try
             {
+                Plugin.Log.Debug($"Setting up localization for {language}");
                 Strings.Culture = new CultureInfo(language);
             }
             catch

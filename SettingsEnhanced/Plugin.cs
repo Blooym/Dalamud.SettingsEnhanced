@@ -29,6 +29,7 @@ namespace SettingsEnhanced
         [PluginService] public static IGameConfig GameConfig { get; set; }
         [PluginService] public static INotificationManager NotificationManager { get; set; }
         private static WindowManager WindowManager { get; set; }
+        private static LocalizationManager LocalizationManager { get; set; }
         public static PluginConfiguration PluginConfiguration { get; private set; }
         public static IEnumerable<TerritoryType> AllowedTerritories;
 #pragma warning restore CS8618
@@ -55,6 +56,7 @@ namespace SettingsEnhanced
 
         public Plugin()
         {
+            LocalizationManager = new();
             AllowedTerritories = DataManager.Excel.GetSheet<TerritoryType>().Where(x => AllowedTerritoryUse.Contains(x.TerritoryIntendedUse.RowId) && !x.IsPvpZone);
             PluginConfiguration = PluginConfiguration.Load();
 
@@ -96,6 +98,8 @@ namespace SettingsEnhanced
 
             // Apply the base game settings again.
             RestoreAllGameSettings();
+
+            LocalizationManager.Dispose();
         }
 
         /// <summary>
@@ -181,9 +185,9 @@ namespace SettingsEnhanced
                 didApplyType = 2;
             }
 
+            // Notify depending on state changes.
             switch (didApplyType)
             {
-                // Notify depending on state changes.
                 case 1:
                     NotificationManager.AddNotification(new Notification()
                     {
@@ -201,6 +205,8 @@ namespace SettingsEnhanced
                         HardExpiry = DateTime.Now.AddSeconds(NotificationShowSeconds),
                         Type = NotificationType.Info
                     });
+                    break;
+                default:
                     break;
             }
         }

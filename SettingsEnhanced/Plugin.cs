@@ -10,10 +10,12 @@ using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
 using SettingsEnhanced.Configuration;
 using SettingsEnhanced.Game.Settings;
+using SettingsEnhanced.Game.Settings.Attributes;
 using SettingsEnhanced.Game.Settings.Util;
 using SettingsEnhanced.Resources.Localization;
 using SettingsEnhanced.UI;
 using SettingsEnhanced.UI.Windows;
+using SystemConfiguration = SettingsEnhanced.Game.Settings.SystemConfiguration;
 
 namespace SettingsEnhanced
 {
@@ -220,7 +222,7 @@ namespace SettingsEnhanced
             var option = (SystemConfigOption)e.Option;
             var updatedOptionProperty = typeof(SystemConfiguration)
                 .GetProperties(ConfigReflectionBindingFlags)
-                .FirstOrDefault(x => x.GetCustomAttribute<SystemConfiguration.ConfigurationItemAttribute>()?.ConfigOption == option);
+                .FirstOrDefault(x => x.GetCustomAttribute<SystemConfigurationItemAttribute>()?.ConfigOption == option);
             if (updatedOptionProperty is null)
             {
                 return;
@@ -258,7 +260,7 @@ namespace SettingsEnhanced
             var option = (UiConfigOption)e.Option;
             var updatedOptionProperty = typeof(UiConfiguration)
                 .GetProperties(ConfigReflectionBindingFlags)
-                .FirstOrDefault(x => x.GetCustomAttribute<UiConfiguration.ConfigurationItemAttribute>()?.ConfigOption == option);
+                .FirstOrDefault(x => x.GetCustomAttribute<UiConfigurationItemAttribute>()?.ConfigOption == option);
             if (updatedOptionProperty is null)
             {
                 return;
@@ -296,7 +298,7 @@ namespace SettingsEnhanced
             var option = (UiControlOption)e.Option;
             var updatedOptionProperty = typeof(UiConfiguration)
                 .GetProperties(ConfigReflectionBindingFlags)
-                .FirstOrDefault(x => x.GetCustomAttribute<UiConfiguration.ConfigurationItemAttribute>()?.ControlOption == option);
+                .FirstOrDefault(x => x.GetCustomAttribute<UiConfigurationItemAttribute>()?.ControlOption == option);
             if (updatedOptionProperty is null)
             {
                 return;

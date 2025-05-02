@@ -14,6 +14,7 @@ using SettingsEnhanced.Game.Settings;
 using SettingsEnhanced.Game.Settings.Attributes;
 using SettingsEnhanced.Game.Settings.Interfaces;
 using SettingsEnhanced.Resources.Localization;
+using SystemConfiguration = SettingsEnhanced.Game.Settings.SystemConfiguration;
 
 namespace SettingsEnhanced.UI.Windows
 {
@@ -40,14 +41,14 @@ namespace SettingsEnhanced.UI.Windows
 
         private static readonly IOrderedEnumerable<IGrouping<string, PropertyInfo>> SystemConfigurationItemsGroup = typeof(SystemConfiguration)
             .GetProperties(Plugin.ConfigReflectionBindingFlags)
-            .Where(p => p.GetCustomAttribute<SystemConfiguration.ConfigurationItemAttribute>() != null)
-            .GroupBy(p => p.GetCustomAttribute<SystemConfiguration.ConfigurationItemAttribute>()!.InterfaceGroup)
+            .Where(p => p.GetCustomAttribute<SystemConfigurationItemAttribute>() != null)
+            .GroupBy(p => p.GetCustomAttribute<UiDisplayInfoAttribute>()!.InterfaceGroupName)
             .OrderBy(g => g.Key);
 
         private static readonly IOrderedEnumerable<IGrouping<string, PropertyInfo>> UiConfigurationItemsGroup = typeof(UiConfiguration)
             .GetProperties(Plugin.ConfigReflectionBindingFlags)
-            .Where(p => p.GetCustomAttribute<UiConfiguration.ConfigurationItemAttribute>() != null)
-            .GroupBy(p => p.GetCustomAttribute<UiConfiguration.ConfigurationItemAttribute>()!.InterfaceGroup)
+            .Where(p => p.GetCustomAttribute<UiConfigurationItemAttribute>() != null)
+            .GroupBy(p => p.GetCustomAttribute<UiDisplayInfoAttribute>()!.InterfaceGroupName)
             .OrderBy(g => g.Key);
 
 
@@ -235,7 +236,7 @@ namespace SettingsEnhanced.UI.Windows
                                 {
                                     if (ImGui.CollapsingHeader(group.Key))
                                     {
-                                        this.DrawConfigurationGroup<SystemConfiguration, SystemConfiguration.ConfigurationItemAttribute>(group, this.selectedItem.SystemConfiguration);
+                                        this.DrawConfigurationGroup(group, this.selectedItem.SystemConfiguration);
                                     }
                                 }
                             }
@@ -251,7 +252,7 @@ namespace SettingsEnhanced.UI.Windows
                                 {
                                     if (ImGui.CollapsingHeader(group.Key))
                                     {
-                                        this.DrawConfigurationGroup<UiConfiguration, UiConfiguration.ConfigurationItemAttribute>(group, this.selectedItem.UiConfiguration);
+                                        this.DrawConfigurationGroup(group, this.selectedItem.UiConfiguration);
                                     }
                                 }
                             }
@@ -318,12 +319,10 @@ namespace SettingsEnhanced.UI.Windows
             }
         }
 
-        private void DrawConfigurationGroup<TConfig, TAttribute>(IGrouping<string, PropertyInfo> group, TConfig configuration)
-            where TConfig : IGameConfiguration<TConfig>
-            where TAttribute : Attribute, IUiDisplay
+        private void DrawConfigurationGroup<TConfig>(IGrouping<string, PropertyInfo> group, TConfig configuration) where TConfig : IGameConfiguration<TConfig>
         {
             var subGroups = group
-                .GroupBy(p => p.GetCustomAttribute<TAttribute>()!.InterfaceHeaderName)
+                .GroupBy(p => p.GetCustomAttribute<UiDisplayInfoAttribute>()!.InterfaceHeaderName)
                 .OrderBy(g => g.Key);
             foreach (var subGroup in subGroups)
             {
@@ -334,20 +333,18 @@ namespace SettingsEnhanced.UI.Windows
 
                 foreach (var prop in subGroup)
                 {
-                    this.DrawConfigurationProperty<TConfig, TAttribute>(prop, configuration);
+                    this.DrawConfigurationProperty(prop, configuration);
                 }
                 ImGuiHelpers.ScaledDummy(6);
             }
         }
 
-        private void DrawConfigurationProperty<TConfig, TAttribute>(PropertyInfo prop, TConfig configuration)
-            where TConfig : IGameConfiguration<TConfig>
-            where TAttribute : Attribute, IUiDisplay
+        private void DrawConfigurationProperty<TConfig>(PropertyInfo prop, TConfig configuration) where TConfig : IGameConfiguration<TConfig>
         {
-            var configOptionAttribute = prop.GetCustomAttribute<TAttribute>();
+            var configOptionAttribute = prop.GetCustomAttribute<UiDisplayInfoAttribute>();
             var displayName = configOptionAttribute?.InterfaceName ?? prop.Name;
 
-            if (configOptionAttribute?.Indented is true)
+            if (configOptionAttribute?.InterfaceIndented is true)
             {
                 ImGui.Indent();
             }
@@ -371,7 +368,7 @@ namespace SettingsEnhanced.UI.Windows
                 this.DrawStringProperty(configuration, prop, displayName);
             }
 
-            if (configOptionAttribute?.Indented is true)
+            if (configOptionAttribute?.InterfaceIndented is true)
             {
                 ImGui.Unindent();
             }

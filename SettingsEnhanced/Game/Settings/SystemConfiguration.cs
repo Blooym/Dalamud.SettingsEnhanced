@@ -6,155 +6,80 @@ using Dalamud.Game.Config;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SettingsEnhanced.Game.Settings.Attributes;
+using SettingsEnhanced.Game.Settings.Enums;
 using SettingsEnhanced.Game.Settings.Interfaces;
 using SettingsEnhanced.Game.Settings.Util;
 
 namespace SettingsEnhanced.Game.Settings
 {
     [JsonConverter(typeof(JsonConverter))]
-    internal sealed class SystemConfiguration : IGameConfiguration<SystemConfiguration>, ICloneable
+    internal sealed partial class SystemConfiguration : IGameConfiguration<SystemConfiguration>, ICloneable
     {
-        [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-        internal sealed class ConfigurationItemAttribute(
-            string name,
-            string interfaceGroup,
-            SystemConfigOption configOption,
-            string headerName = "",
-            bool indented = false
-        ) : Attribute, IUiDisplay
-        {
-            /// <inheritdoc />
-            public string InterfaceName { get; } = name;
-
-            /// <inheritdoc />
-            public string InterfaceHeaderName { get; } = headerName;
-
-            /// <inheritdoc />
-            public string InterfaceGroup { get; } = interfaceGroup;
-
-            /// <inheritdoc />
-            public bool Indented { get; } = indented;
-
-            /// <summary>
-            ///     Enum value for Dalamud's internal handling of this config value.
-            ///     This property will be loaded from and applied the setting mapped to this value.
-            /// </summary>
-            public SystemConfigOption ConfigOption { get; } = configOption;
-        }
-
-        public enum CharacterObjectQuantity : ushort
-        {
-            Maximum = 0,
-            High = 1,
-            Normal = 2,
-            Low = 3,
-            Minimum = 4,
-        }
-
 #pragma warning disable CS8618
         // Available Configuration Fields
         // Do not change the Property Name of these, it'll break a configuration file.
 
-        [ConfigurationItem(
-            name: "Master",
-            interfaceGroup: "Sound Settings",
-            configOption: SystemConfigOption.SoundMaster,
-            headerName: "Volume Settings")]
+        [SystemConfigurationItem(SystemConfigOption.SoundMaster)]
+        [UiDisplayInfo("Master", "Sound Settings", "Volume Settings")]
         [ConfigurationInputRange(0, 100)]
         public uint MasterVolume { get; private set; }
 
-        [ConfigurationItem(
-            name: "Background Music",
-            interfaceGroup: "Sound Settings",
-            configOption: SystemConfigOption.SoundBgm,
-            headerName: "Volume Settings")]
+        [SystemConfigurationItem(SystemConfigOption.SoundBgm)]
+        [UiDisplayInfo("Background Music", "Sound Settings", "Volume Settings")]
         [ConfigurationInputRange(0, 100)]
-        public uint BGMVolume { get; private set; }
+        public uint BgmVolume { get; private set; }
 
-        [ConfigurationItem(
-            name: "Sound Effects",
-            interfaceGroup: "Sound Settings",
-            configOption: SystemConfigOption.SoundSe,
-            headerName: "Volume Settings")]
+        [SystemConfigurationItem(SystemConfigOption.SoundSe)]
+        [UiDisplayInfo("Sound Effects", "Sound Settings", "Volume Settings")]
         [ConfigurationInputRange(0, 100)]
         public uint SoundEffectVolume { get; private set; }
 
-        [ConfigurationItem(
-            name: "Voices",
-            interfaceGroup: "Sound Settings",
-            configOption: SystemConfigOption.SoundVoice,
-            headerName: "Volume Settings")]
+        [SystemConfigurationItem(SystemConfigOption.SoundVoice)]
+        [UiDisplayInfo("Voices", "Sound Settings", "Volume Settings")]
         [ConfigurationInputRange(0, 100)]
         public uint VoiceVolume { get; private set; }
 
-        [ConfigurationItem(
-            name: "System Sounds",
-            interfaceGroup: "Sound Settings",
-            configOption: SystemConfigOption.SoundSystem,
-            headerName: "Volume Settings")]
+        [SystemConfigurationItem(SystemConfigOption.SoundSystem)]
+        [UiDisplayInfo("System Sounds", "Sound Settings", "Volume Settings")]
         [ConfigurationInputRange(0, 100)]
         public uint SystemSoundsVolume { get; private set; }
 
-        [ConfigurationItem(
-            name: "Ambient Sounds",
-            interfaceGroup: "Sound Settings",
-            configOption: SystemConfigOption.SoundEnv,
-            headerName: "Volume Settings")]
+        [SystemConfigurationItem(SystemConfigOption.SoundEnv)]
+        [UiDisplayInfo("Ambient Sounds", "Sound Settings", "Volume Settings")]
         [ConfigurationInputRange(0, 100)]
         public uint AmbientSoundsVolume { get; private set; }
 
-        [ConfigurationItem(
-            name: "Performance Sounds",
-            interfaceGroup: "Sound Settings",
-            configOption: SystemConfigOption.SoundPerform,
-            headerName: "Volume Settings")]
+        [SystemConfigurationItem(SystemConfigOption.SoundPerform)]
+        [UiDisplayInfo("Performance Sounds", "Sound Settings", "Volume Settings")]
         [ConfigurationInputRange(0, 100)]
         public uint PerformanceSoundsVolume { get; private set; }
 
-        [ConfigurationItem(
-            name: "Player Effects (Self)",
-            interfaceGroup: "Sound Settings",
-            configOption: SystemConfigOption.SoundPlayer,
-            headerName: "Volume Settings")]
+        [SystemConfigurationItem(SystemConfigOption.SoundPlayer)]
+        [UiDisplayInfo("Player Effects (Self)", "Sound Settings", "Volume Settings")]
         [ConfigurationInputRange(0, 100)]
         public uint PlayerEffectsSelfVolume { get; private set; }
 
-        [ConfigurationItem(
-            name: "Player Effects (Party)",
-            interfaceGroup: "Sound Settings",
-            configOption: SystemConfigOption.SoundParty,
-            headerName: "Volume Settings")]
+        [SystemConfigurationItem(SystemConfigOption.SoundParty)]
+        [UiDisplayInfo("Player Effects (Party)", "Sound Settings", "Volume Settings")]
         [ConfigurationInputRange(0, 100)]
         public uint PlayerEffectsPartyVolume { get; private set; }
 
-        [ConfigurationItem(
-            name: "Player Effects (Other PCs)",
-            interfaceGroup: "Sound Settings",
-            configOption: SystemConfigOption.SoundOther,
-            headerName: "Volume Settings")]
+        [SystemConfigurationItem(SystemConfigOption.SoundOther)]
+        [UiDisplayInfo("Player Effects (Other PCs)", "Sound Settings", "Volume Settings")]
         [ConfigurationInputRange(0, 100)]
         public uint PlayerEffectsOtherPCsVolume { get; private set; }
 
-        [ConfigurationItem(
-            name: "DualSense Speaker Volume",
-            interfaceGroup: "Sound Settings",
-            configOption: SystemConfigOption.SoundPad,
-            headerName: "Dualsense/DUALSHOCK 4 Settings")]
+        [SystemConfigurationItem(SystemConfigOption.SoundPad)]
+        [UiDisplayInfo("DualSense Speaker Volume", "Sound Settings", "Dualsense/DUALSHOCK 4 Settings")]
         [ConfigurationInputRange(0, 100)]
         public uint DualSenseSpeakerVolume { get; private set; }
 
-        [ConfigurationItem(
-            name: "Character and Object Quantity",
-            interfaceGroup: "Other Settings",
-            configOption: SystemConfigOption.DisplayObjectLimitType,
-            headerName: "Display Limits")]
+        [SystemConfigurationItem(SystemConfigOption.DisplayObjectLimitType)]
+        [UiDisplayInfo("Character and Object Quantity", "Other Settings", "Display Limits")]
         public CharacterObjectQuantity CutsceneAndObjectQuantity { get; private set; }
 
-        [ConfigurationItem(
-            name: "##ScreenshotFolder",
-            interfaceGroup: "Other Settings",
-            configOption: SystemConfigOption.ScreenShotDir,
-            headerName: "Screenshot Folder")]
+        [SystemConfigurationItem(SystemConfigOption.ScreenShotDir)]
+        [UiDisplayInfo("##ScreenshotFolder", "Other Settings", "Screenshot Folder")]
         [ConfigurationInputRange(20, 200)]
         public string ScreenshotLocationDir { get; private set; }
 #pragma warning restore CS8618
@@ -225,7 +150,7 @@ namespace SettingsEnhanced.Game.Settings
             var systemConfiguration = new SystemConfiguration();
             foreach (var prop in typeof(SystemConfiguration).GetProperties(Plugin.ConfigReflectionBindingFlags))
             {
-                var configOptionAttribute = prop.GetCustomAttribute<ConfigurationItemAttribute>();
+                var configOptionAttribute = prop.GetCustomAttribute<SystemConfigurationItemAttribute>();
                 if (configOptionAttribute != null && GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ConfigOption, prop.PropertyType, out var value))
                 {
                     prop.SetValue(systemConfiguration, value);
@@ -244,7 +169,7 @@ namespace SettingsEnhanced.Game.Settings
                     .GetProperties(Plugin.ConfigReflectionBindingFlags)
                     .Where(p => !onlyApplyModified || this.modifiedProperties.Contains(p.Name)))
             {
-                var configOptionAttribute = prop.GetCustomAttribute<ConfigurationItemAttribute>();
+                var configOptionAttribute = prop.GetCustomAttribute<SystemConfigurationItemAttribute>();
                 if (configOptionAttribute != null)
                 {
                     var value = prop.GetValue(this);

@@ -6,422 +6,179 @@ using Dalamud.Game.Config;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SettingsEnhanced.Game.Settings.Attributes;
+using SettingsEnhanced.Game.Settings.Enums;
 using SettingsEnhanced.Game.Settings.Interfaces;
 using SettingsEnhanced.Game.Settings.Util;
+using SettingsEnhanced.Resources.Localization;
 
 namespace SettingsEnhanced.Game.Settings
 {
 
     [JsonConverter(typeof(JsonConverter))]
-    internal sealed class UiConfiguration : IGameConfiguration<UiConfiguration>, ICloneable
+    internal sealed partial class UiConfiguration : IGameConfiguration<UiConfiguration>, ICloneable
     {
-        [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-        internal sealed class ConfigurationItemAttribute : Attribute, IUiDisplay
-        {
-            // Constructor for UiConfigOption
-            public ConfigurationItemAttribute(
-                string name,
-                string interfaceGroup,
-                UiConfigOption configOption,
-                string headerName = "",
-                bool indented = false
-            )
-            {
-                this.InterfaceName = name;
-                this.InterfaceGroup = interfaceGroup;
-                this.ConfigOption = configOption;
-                this.InterfaceHeaderName = headerName;
-                this.Indented = indented;
-            }
-
-            // Constructor for UiControlOption
-            public ConfigurationItemAttribute(
-                string name,
-                string interfaceGroup,
-                UiControlOption controlOption,
-                string headerName = "",
-                bool indented = false
-            )
-            {
-                this.InterfaceName = name;
-                this.InterfaceGroup = interfaceGroup;
-                this.ControlOption = controlOption;
-                this.InterfaceHeaderName = headerName;
-                this.Indented = indented;
-            }
-
-            /// <inheritdoc />
-            public string InterfaceName { get; }
-
-            /// <inheritdoc />
-            public string InterfaceHeaderName { get; }
-
-            /// <inheritdoc />
-            public string InterfaceGroup { get; }
-
-            /// <inheritdoc />
-            public bool Indented { get; }
-
-            // Property for UiConfigOption
-            public UiConfigOption? ConfigOption { get; }
-
-            // Property for UiControlOption
-            public UiControlOption? ControlOption { get; }
-        }
-
-        internal enum MovementType
-        {
-            Standard = 0,
-            Legacy = 1
-        }
-
-        internal enum BattleEffects
-        {
-            All = 0,
-            Limited = 1,
-            None = 2,
-        }
-
-        public enum FlyTextSize
-        {
-            Standard = 0,
-            Large = 1,
-            Maximum = 2
-        }
-
-        public enum PopupTextSize
-        {
-            Standard = 0,
-            Large = 1,
-            Maximum = 2
-        }
-
-        public enum ServerClockType
-        {
-            DefaultToLanguage = 0,
-            TwentyFourHour = 1,
-            TwelveHour = 2,
-        }
-
 #pragma warning disable CS8618
-        // Available Configuration Fields
-        // Do not change the Property Name of these, it'll break a configuration file.
 
-        [ConfigurationItem(
-            name: "Movement Type",
-            interfaceGroup: "Control Settings",
-            controlOption: UiControlOption.MoveMode,
-            headerName: "Movement Settings")]
+        [UiConfigurationItem(UiControlOption.MoveMode)]
+        [UiDisplayInfo(nameof(Strings.UI_ConfigOption_Name_MoveMode), nameof(Strings.UI_ConfigOption_GroupName_ControlSettings), nameof(Strings.UI_ConfigOptior_HeaderName_MovementSettings))]
         public MovementType MoveMode { get; private set; }
 
-        [ConfigurationItem(
-            name: "Own",
-            interfaceGroup: "Character Settings",
-            configOption: UiConfigOption.BattleEffectSelf,
-            headerName: "Battle Effects Settings")]
+        [UiConfigurationItem(UiConfigOption.BattleEffectSelf)]
+        [UiDisplayInfo("Own", "Character Settings", "Battle Effects Settings")]
         public BattleEffects BattleEffectSelf { get; private set; }
 
-        [ConfigurationItem(
-            name: "Party",
-            interfaceGroup: "Character Settings",
-            configOption: UiConfigOption.BattleEffectParty,
-            headerName: "Battle Effects Settings")]
+        [UiConfigurationItem(UiConfigOption.BattleEffectParty)]
+        [UiDisplayInfo("Party", "Character Settings", "Battle Effects Settings")]
         public BattleEffects BattleEffectParty { get; private set; }
 
-        [ConfigurationItem(
-            name: "Other (excl. PvP)",
-            interfaceGroup: "Character Settings",
-            configOption: UiConfigOption.BattleEffectOther,
-            headerName: "Battle Effects Settings")]
+        [UiConfigurationItem(UiConfigOption.BattleEffectOther)]
+        [UiDisplayInfo("Other (excl. PvP)", "Character Settings", "Battle Effects Settings")]
         public BattleEffects BattleEffectOther { get; private set; }
 
-        [ConfigurationItem(
-            name: "PvP Opponents",
-            interfaceGroup: "Character Settings",
-            configOption: UiConfigOption.BattleEffectPvPEnemyPc,
-            headerName: "Battle Effects Settings")]
+        [UiConfigurationItem(UiConfigOption.BattleEffectPvPEnemyPc)]
+        [UiDisplayInfo("PvP Opponents", "Character Settings", "Battle Effects Settings")]
         public BattleEffects BattleEffectPvPOpponent { get; private set; }
 
-        [ConfigurationItem(
-            name: "Idle Animation Delay",
-            interfaceGroup: "Character Settings",
-            configOption: UiConfigOption.IdleEmoteTime,
-            headerName: "Animation")]
+        [UiConfigurationItem(UiConfigOption.IdleEmoteTime)]
+        [UiDisplayInfo("Idle Animation Delay", "Character Settings", "Animation")]
         [ConfigurationInputRange(0, 30)]
         public uint IdleAnimationDelay { get; private set; }
 
-        [ConfigurationItem(
-            name: "Randomize idle animation",
-            interfaceGroup: "Character Settings",
-            configOption: UiConfigOption.IdleEmoteRandomType,
-            headerName: "Animation")]
+        [UiConfigurationItem(UiConfigOption.IdleEmoteRandomType)]
+        [UiDisplayInfo("Randomize idle animation", "Character Settings", "Animation")]
         public bool IdleEmoteRandomType { get; private set; }
 
-        [ConfigurationItem(
-            name: "Display confirmation when selling items",
-            interfaceGroup: "Item Settings",
-            configOption: UiConfigOption.ShopConfirm,
-            headerName: "Shop Settings")]
+        [UiConfigurationItem(UiConfigOption.ShopConfirm)]
+        [UiDisplayInfo("Display confirmation when selling items", "Item Settings", "Shop Settings")]
         public bool ShopConfirmOnSell { get; private set; }
 
-        [ConfigurationItem(
-            name: "Meldable Items",
-            interfaceGroup: "Item Settings",
-            configOption: UiConfigOption.ShopConfirmMateria,
-            headerName: "Shop Settings",
-            indented: true
-        )]
+        [UiConfigurationItem(UiConfigOption.ShopConfirmMateria)]
+        [UiDisplayInfo("Meldable Items", "Item Settings", "Shop Settings", true)]
         public bool ShopConfirmMeldableItems { get; private set; }
 
-        [ConfigurationItem(
-            name: "Spiritbound Items",
-            interfaceGroup: "Item Settings",
-            configOption: UiConfigOption.ShopConfirmSpiritBondMax,
-            headerName: "Shop Settings",
-            indented: true
-        )]
+        [UiConfigurationItem(UiConfigOption.ShopConfirmSpiritBondMax)]
+        [UiDisplayInfo("Spiritbound Items", "Item Settings", "Shop Settings", true)]
         public bool ShopConfirmSpiritbondMax { get; private set; }
 
-        [ConfigurationItem(
-            name: "Unique/Untradeable Items",
-            interfaceGroup: "Item Settings",
-            configOption: UiConfigOption.ShopConfirmExRare,
-            headerName: "Shop Settings",
-            indented: true
-        )]
+        [UiConfigurationItem(UiConfigOption.ShopConfirmExRare)]
+        [UiDisplayInfo("Unique/Untradeable Items", "Item Settings", "Shop Settings", true)]
         public bool ShopConfirmRareItem { get; private set; }
 
-        [ConfigurationItem(
-            name: "Display Emote Log Message",
-            interfaceGroup: "Chat Settings",
-            configOption: UiConfigOption.EmoteTextType,
-            headerName: "Emotes"
-         )]
+        [UiConfigurationItem(UiConfigOption.EmoteTextType)]
+        [UiDisplayInfo("Display Emote Log Message", "Chat Settings", "Emotes")]
         public bool EmoteDisplayLogMessage { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display flying text",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.FlyTextDisp,
-           headerName: "Text"
-        )]
+        [UiConfigurationItem(UiControlOption.FlyTextDisp)]
+        [UiDisplayInfo("Display flying text", "HUD Settings", "Text")]
         public bool HudDisplayFlyingText { get; private set; }
 
-        [ConfigurationItem(
-           name: "Flying Text Size",
-           interfaceGroup: "HUD Settings",
-           configOption: UiConfigOption.FlyTextDispSize,
-           headerName: "Text",
-           indented: true
-        )]
+        [UiConfigurationItem(UiConfigOption.FlyTextDispSize)]
+        [UiDisplayInfo("Flying Text Size", "HUD Settings", "Text", true)]
         public FlyTextSize HudFlyingTextSize { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display pop-up text",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.PopUpTextDisp,
-           headerName: "Text"
-        )]
+        [UiConfigurationItem(UiControlOption.PopUpTextDisp)]
+        [UiDisplayInfo("Display pop-up text", "HUD Settings", "Text")]
         public bool HudDisplayPopupText { get; private set; }
 
-        [ConfigurationItem(
-           name: "Pop-up Text Size",
-           interfaceGroup: "HUD Settings",
-           configOption: UiConfigOption.FlyTextDispSize,
-           headerName: "Text",
-           indented: true
-        )]
+        [UiConfigurationItem(UiConfigOption.FlyTextDispSize)]
+        [UiDisplayInfo("Pop-up Text Size", "HUD Settings", "Text", true)]
         public PopupTextSize HudPopupTextSize { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display parameter bars",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.CharaParamDisp
-        )]
+        [UiConfigurationItem(UiControlOption.CharaParamDisp)]
+        [UiDisplayInfo("Display parameter bars", "HUD Settings")]
         public bool HudDisplayParameterBars { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display EXP bar",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.ExpDisp
-        )]
+        [UiConfigurationItem(UiControlOption.ExpDisp)]
+        [UiDisplayInfo("Display EXP bar", "HUD Settings")]
         public bool HudDisplayExpBar { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display inventory grid",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.InventryStatusDisp
-        )]
+        [UiConfigurationItem(UiControlOption.InventryStatusDisp)]
+        [UiDisplayInfo("Display inventory grid", "HUD Settings")]
         public bool HudDisplayInventoryGrid { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display duty list",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.DutyListDisp,
-           headerName: "Duty List"
-        )]
+        [UiConfigurationItem(UiControlOption.DutyListDisp)]
+        [UiDisplayInfo("Display duty list", "HUD Settings", "Duty List")]
         public bool HudDisplayDutyList { get; private set; }
 
-        [ConfigurationItem(
-           name: "Number of Duties Displayed",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.DutyListNumDisp,
-           headerName: "Duty List",
-           indented: true
-        )]
+        [UiConfigurationItem(UiControlOption.DutyListNumDisp)]
+        [UiDisplayInfo("Number of Duties Displayed", "HUD Settings", "Duty List", true)]
         [ConfigurationInputRange(1, 10)]
         public uint HudDisplayDutyCount { get; private set; }
 
-        [ConfigurationItem(
-           name: "Hide duty list during instanced duty",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.InInstanceContentDutyListDisp,
-           headerName: "Duty List",
-           indented: true
-        )]
+        [UiConfigurationItem(UiControlOption.InInstanceContentDutyListDisp)]
+        [UiDisplayInfo("Hide duty list during instanced duty", "HUD Settings", "Duty List", true)]
         public bool HudDisplayDutyListInstanceDuty { get; private set; }
 
-        [ConfigurationItem(
-           name: "Hide duty list during non-instanced duty",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.InPublicContentDutyListDisp,
-           headerName: "Duty List",
-           indented: true
-        )]
+        [UiConfigurationItem(UiControlOption.InPublicContentDutyListDisp)]
+        [UiDisplayInfo("Hide duty list during non-instanced duty", "HUD Settings", "Duty List", true)]
         public bool HudDisplayDutyListNonInstanceDuty { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display registered duties in Timers",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.ContentsInfoJoiningRequestDisp,
-           headerName: "Duty List",
-           indented: true
-        )]
+        [UiConfigurationItem(UiControlOption.ContentsInfoJoiningRequestDisp)]
+        [UiDisplayInfo("Display registered duties in Timers", "HUD Settings", "Duty List", true)]
         public bool HudDisplayRegisteredDutiesTimers { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display duty registration details in Timers",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.ContentsInfoJoiningRequestSituationDisp,
-           headerName: "Duty List",
-           indented: true
-        )]
+        [UiConfigurationItem(UiControlOption.ContentsInfoJoiningRequestSituationDisp)]
+        [UiDisplayInfo("Display duty registration details in Timers", "HUD Settings", "Duty List", true)]
         public bool HudDisplayRegisteredDutyDetailTimers { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display minimap",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.NaviMapDisp
-         )]
+        [UiConfigurationItem(UiControlOption.NaviMapDisp)]
+        [UiDisplayInfo("Display minimap", "HUD Settings")]
         public bool HudDisplayMinimap { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display gil",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.GilStatusDisp
-        )]
+        [UiConfigurationItem(UiControlOption.GilStatusDisp)]
+        [UiDisplayInfo("Display gil", "HUD Settings")]
         public bool HudDisplayGil { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display server info",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.InfoSettingDisp,
-           headerName: "Server Info Bar"
-        )]
+        [UiConfigurationItem(UiControlOption.InfoSettingDisp)]
+        [UiDisplayInfo("Display server info", "HUD Settings", "Server Info Bar")]
         public bool HudDisplayServerInfo { get; private set; }
 
-        [ConfigurationItem(
-           name: "Clock Type",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.InfoSettingDispType,
-           headerName: "Server Info Bar"
-        )]
+        [UiConfigurationItem(UiControlOption.InfoSettingDispType)]
+        [UiDisplayInfo("Clock Type", "HUD Settings", "Server Info Bar")]
         public ServerClockType HudDisplayServerClockType { get; private set; }
 
-        [ConfigurationItem(
-           name: "Eorzea Time",
-           interfaceGroup: "HUD Settings",
-           configOption: UiConfigOption.TimeEorzea,
-           headerName: "Server Info Bar",
-           indented: true
-        )]
+        [UiConfigurationItem(UiConfigOption.TimeEorzea)]
+        [UiDisplayInfo("Eorzea Time", "HUD Settings", "Server Info Bar", true)]
         public bool HudDisplayServerInfoEorzeaTime { get; set; }
 
-        [ConfigurationItem(
-           name: "Local Time",
-           interfaceGroup: "HUD Settings",
-           configOption: UiConfigOption.TimeLocal,
-           headerName: "Server Info Bar",
-           indented: true
-        )]
+        [UiConfigurationItem(UiConfigOption.TimeLocal)]
+        [UiDisplayInfo("Local Time", "HUD Settings", "Server Info Bar", true)]
         public bool HudDisplayServerInfoLocalTime { get; set; }
 
-        [ConfigurationItem(
-           name: "Server Time",
-           interfaceGroup: "HUD Settings",
-           configOption: UiConfigOption.TimeServer,
-           headerName: "Server Info Bar",
-           indented: true
-        )]
+        [UiConfigurationItem(UiConfigOption.TimeServer)]
+        [UiDisplayInfo("Server Time", "HUD Settings", "Server Info Bar", true)]
         public bool HudDisplayServerInfoServerTIme { get; set; }
 
-        [ConfigurationItem(
-           name: "Display current World name",
-           interfaceGroup: "HUD Settings",
-           configOption: UiConfigOption.InfoSettingDispWorldNameType,
-           headerName: "Server Info Bar",
-           indented: true
-        )]
+        [UiConfigurationItem(UiConfigOption.InfoSettingDispWorldNameType)]
+        [UiDisplayInfo("Display current World nameKey", "HUD Settings", "Server Info Bar", true)]
         public bool HudDisplayServerInfoCurrentWorld { get; set; }
 
-        [ConfigurationItem(
-           name: "Display limit gauge",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.LimitBreakGaugeDisp
-        )]
+        [UiConfigurationItem(UiControlOption.LimitBreakGaugeDisp)]
+        [UiDisplayInfo("Display limit gauge", "HUD Settings")]
         public bool HudDisplayLimitGauge { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display Main Scenario Guide",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.ScenarioTreeCompleteDisp,
-           headerName: "Main Scenario"
-        )]
+        [UiConfigurationItem(UiControlOption.ScenarioTreeCompleteDisp)]
+        [UiDisplayInfo("Display Main Scenario Guide", "HUD Settings", "Main Scenario")]
         public bool HudDisplayScenarioInfo { get; private set; }
 
-        [ConfigurationItem(
-           name: "Hide when all quests complete",
-           interfaceGroup: "HUD Settings",
-           controlOption: UiControlOption.ScenarioTreeCompleteDisp,
-           headerName: "Main Scenario",
-           indented: true
-        )]
+        [UiConfigurationItem(UiControlOption.ScenarioTreeCompleteDisp)]
+        [UiDisplayInfo("Hide when all quests complete", "HUD Settings", "Main Scenario", true)]
         public bool HudHideScenarioComplete { get; private set; }
 
-        [ConfigurationItem(
-           name: "Display character portraits with battle dialogue widget",
-           interfaceGroup: "HUD Settings",
-           configOption: UiConfigOption.BattleTalkShowFace
-        )]
+        [UiConfigurationItem(UiConfigOption.BattleTalkShowFace)]
+        [UiDisplayInfo("Display character portraits with battle dialogue widget", "HUD Settings")]
         public bool HudDisplayBattleTextPortraits { get; private set; }
 
-        [ConfigurationItem(
-            name: "Display party list",
-            interfaceGroup: "HUD Settings",
-            controlOption: UiControlOption.PartyListDisp,
-            headerName: "Party List"
-        )]
+        [UiConfigurationItem(UiControlOption.PartyListDisp)]
+        [UiDisplayInfo("Display party list", "HUD Settings", "Party List")]
         public bool HudDisplayPartyList { get; private set; }
 
-        [ConfigurationItem(
-            name: "Hide party list when solo",
-            interfaceGroup: "HUD Settings",
-            controlOption: UiControlOption.PartyListSoloOff,
-            headerName: "Party List",
-            indented: true
-        )]
+        [UiConfigurationItem(UiControlOption.PartyListSoloOff)]
+        [UiDisplayInfo("Hide party list when solo", "HUD Settings", "Party List", true)]
         public bool HudHidePartyListSolo { get; private set; }
+
 #pragma warning restore CS8618
+
 
         /// <summary>
         ///     Properties that will be kept across serialisation and deserialisation.
@@ -489,7 +246,7 @@ namespace SettingsEnhanced.Game.Settings
             var uiConfiguration = new UiConfiguration();
             foreach (var prop in typeof(UiConfiguration).GetProperties(Plugin.ConfigReflectionBindingFlags))
             {
-                var configOptionAttribute = prop.GetCustomAttribute<ConfigurationItemAttribute>();
+                var configOptionAttribute = prop.GetCustomAttribute<UiConfigurationItemAttribute>();
                 if (configOptionAttribute != null)
                 {
                     if (configOptionAttribute.ConfigOption is not null && GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ConfigOption, prop.PropertyType, out var uiConfigValue))
@@ -515,7 +272,7 @@ namespace SettingsEnhanced.Game.Settings
                 .GetProperties(Plugin.ConfigReflectionBindingFlags)
                 .Where(p => !onlyApplyModified || this.modifiedProperties.Contains(p.Name)))
             {
-                var configOptionAttribute = prop.GetCustomAttribute<ConfigurationItemAttribute>();
+                var configOptionAttribute = prop.GetCustomAttribute<UiConfigurationItemAttribute>();
                 if (configOptionAttribute != null)
                 {
                     var value = prop.GetValue(this);

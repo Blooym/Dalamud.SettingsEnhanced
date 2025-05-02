@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Dalamud.Configuration;
 using SettingsEnhanced.Game.Settings;
+using SystemConfiguration = SettingsEnhanced.Game.Settings.SystemConfiguration;
 
 namespace SettingsEnhanced.Configuration
 {

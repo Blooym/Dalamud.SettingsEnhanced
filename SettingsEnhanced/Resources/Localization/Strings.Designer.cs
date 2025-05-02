@@ -212,5 +212,23 @@ namespace SettingsEnhanced.Resources.Localization {
                 return ResourceManager.GetString("UI_Configuration_ZoneConfig_EnumFallback", resourceCulture);
             }
         }
+        
+        internal static string UI_ConfigOption_Name_MoveMode {
+            get {
+                return ResourceManager.GetString("UI_ConfigOption_Name_MoveMode", resourceCulture);
+            }
+        }
+        
+        internal static string UI_ConfigOption_GroupName_ControlSettings {
+            get {
+                return ResourceManager.GetString("UI_ConfigOption_GroupName_ControlSettings", resourceCulture);
+            }
+        }
+        
+        internal static string UI_ConfigOptior_HeaderName_MovementSettings {
+            get {
+                return ResourceManager.GetString("UI_ConfigOptior_HeaderName_MovementSettings", resourceCulture);
+            }
+        }
     }
 }

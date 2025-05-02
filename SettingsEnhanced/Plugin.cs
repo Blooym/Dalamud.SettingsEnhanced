@@ -11,6 +11,7 @@ using Lumina.Excel.Sheets;
 using SettingsEnhanced.Configuration;
 using SettingsEnhanced.Game.Settings;
 using SettingsEnhanced.Game.Settings.Util;
+using SettingsEnhanced.Resources.Localization;
 using SettingsEnhanced.UI;
 using SettingsEnhanced.UI.Windows;
 
@@ -186,8 +187,8 @@ namespace SettingsEnhanced
                 case 1:
                     NotificationManager.AddNotification(new Notification()
                     {
-                        Title = "Configuration Modified",
-                        Content = "Zone configuration applied",
+                        Title = Strings.Notification_ConfigurationModified_Title,
+                        Content = Strings.Notification_ConfigurationModified_Content,
                         HardExpiry = DateTime.Now.AddSeconds(NotificationShowSeconds),
                         Type = NotificationType.Info
                     });
@@ -195,8 +196,8 @@ namespace SettingsEnhanced
                 case 2:
                     NotificationManager.AddNotification(new Notification()
                     {
-                        Title = "Configuration Restored",
-                        Content = "Game configuration data restored",
+                        Title = Strings.Notification_ConfigurationRestored_Title,
+                        Content = Strings.Notification_ConfigurationRestored_Content,
                         HardExpiry = DateTime.Now.AddSeconds(NotificationShowSeconds),
                         Type = NotificationType.Info
                     });
@@ -340,8 +341,8 @@ namespace SettingsEnhanced
                 PluginConfiguration.Save();
                 NotificationManager.AddNotification(new Notification()
                 {
-                    Title = "Configuration Restored",
-                    Content = "Game configuration data restored",
+                    Title = Strings.Notification_ConfigurationRestored_Title,
+                    Content = Strings.Notification_ConfigurationRestored_Content,
                     HardExpiry = DateTime.Now.AddSeconds(NotificationShowSeconds),
                     Type = NotificationType.Info
                 });

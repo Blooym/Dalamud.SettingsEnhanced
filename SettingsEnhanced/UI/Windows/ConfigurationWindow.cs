@@ -13,6 +13,7 @@ using ImGuiNET;
 using SettingsEnhanced.Game.Settings;
 using SettingsEnhanced.Game.Settings.Attributes;
 using SettingsEnhanced.Game.Settings.Interfaces;
+using SettingsEnhanced.Resources.Localization;
 
 namespace SettingsEnhanced.UI.Windows
 {
@@ -71,12 +72,12 @@ namespace SettingsEnhanced.UI.Windows
                 {
                     Icon = FontAwesomeIcon.Heart,
                     Click= (_) => Util.OpenLink("https://go.blooym.dev/donate"),
-                    ShowTooltip = () => ImGui.SetTooltip("Support the developer"),
+                    ShowTooltip = () => ImGui.SetTooltip(Strings.UI_Titlebar_SupportDeveloper),
                 },
                 new() {
                     Icon = FontAwesomeIcon.Comment,
                     Click = (_) => Util.OpenLink("https://github.com/Blooym/Dalamud.SettingsEnhanced"),
-                    ShowTooltip = () => ImGui.SetTooltip("Repository"),
+                    ShowTooltip = () => ImGui.SetTooltip(Strings.UI_Titlebar_Repository),
                 },
             ];
         }
@@ -96,27 +97,27 @@ namespace SettingsEnhanced.UI.Windows
         private static void DrawWarningUi()
         {
             Plugin.GameConfig.TryGet(SystemConfigOption.FirstConfigBackup, out bool neverMadeBackup);
-            ImGui.TextColored(ImGuiColors.DalamudRed, "IMPORTANT NOTICE");
-            ImGui.TextWrapped("This plugin automatically modifies your game settings based on your configuration.");
-            ImGui.TextWrapped("The developer has worked hard to minimize the risk of data loss due to bugs or crashes; However, you should still make regular backups using the official configuration backup tool (available in the character menu) while using this plugin.");
-            ImGui.TextColored(ImGuiColors.DalamudYellow, "It's crucial that you back up your settings frequently to prevent any potential issues.");
-            ImGui.TextWrapped("You will not be able to use this plugin until you've made at least one server backup. This is to ensure your settings can be restored if necessary.");
-            ImGui.TextWrapped("By continuing, you acknowledge the risks and agree to regularly back up your settings as advised.");
+            ImGui.TextColored(ImGuiColors.DalamudRed, Strings.UI_Configuration_WarningTitle);
+            ImGui.TextWrapped(Strings.UI_Configuration_WarningText1);
+            ImGui.TextWrapped(Strings.UI_Configuration_WarningText2);
+            ImGui.TextColored(ImGuiColors.DalamudYellow, Strings.UI_Configuration_WarningText3);
+            ImGui.TextWrapped(Strings.UI_Configuration_WarningText4);
+            ImGui.TextWrapped(Strings.UI_Configuration_WarningText5);
             ImGui.NewLine();
             if (neverMadeBackup)
             {
-                ImGui.TextColored(ImGuiColors.DalamudRed, "You must create a server backup before proceeding.");
+                ImGui.TextColored(ImGuiColors.DalamudRed, Strings.UI_Configuration_WarningBackupRequired);
                 return;
             }
 
             ImGui.BeginDisabled(neverMadeBackup || !ImGui.IsKeyDown(ImGuiKey.LeftShift));
-            if (ImGui.Button("I acknowledge the risks and wish to continue"))
+            if (ImGui.Button(Strings.UI_Configuration_WarningContinueButton))
             {
                 Plugin.PluginConfiguration.UiWarningAccepted = true;
                 Plugin.PluginConfiguration.Save();
             }
             ImGui.EndDisabled();
-            ImGuiComponents.HelpMarker("Hold 'Left Shift' to activate the button");
+            ImGuiComponents.HelpMarker(Strings.UI_Configuration_WarningContinueHint);
         }
 
         private void DrawConfigUi()
@@ -146,13 +147,13 @@ namespace SettingsEnhanced.UI.Windows
             ImGui.EndChild();
             if (Plugin.PluginConfiguration.UiConfigurationOverwritten || Plugin.PluginConfiguration.SystemConfigurationOverwritten)
             {
-                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudYellow, $"Currently using zone settings");
-                ImGuiComponents.HelpMarker("Changing a setting you have overwritten in this zone via the in-game options menu will only apply temporarily and will not be saved.\n\nChanging any setting you have not overwritten will apply to your global game configuration as normal.", FontAwesomeIcon.QuestionCircle);
+                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudYellow, Strings.UI_Configuration_SettingsType_Zone_Title);
+                ImGuiComponents.HelpMarker(Strings.UI_Configuration_SettingsType_Zone_Description, FontAwesomeIcon.QuestionCircle);
             }
             else
             {
-                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.HealerGreen, "Currently using game settings");
-                ImGuiComponents.HelpMarker("All changes to your settings will work as normal.", FontAwesomeIcon.QuestionCircle);
+                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.HealerGreen, Strings.UI_Configuration_SettingsType_Game_Title);
+                ImGuiComponents.HelpMarker(Strings.UI_Configuration_SettingsType_Game_Description, FontAwesomeIcon.QuestionCircle);
             }
         }
 
@@ -178,7 +179,7 @@ namespace SettingsEnhanced.UI.Windows
                 foreach (var group in grouped)
                 {
                     var hasSettings = group.Key;
-                    ImGui.TextDisabled(hasSettings ? "Custom Settings" : "Default Settings");
+                    ImGui.TextDisabled(hasSettings ? Strings.UI_Configuration_Zonelist_CustomSettings : Strings.UI_Configuration_Zonelist_DefaultSettings);
                     foreach (var (id, name) in group)
                     {
                         var currentTerritory = Plugin.ClientState.TerritoryType == id;
@@ -226,7 +227,7 @@ namespace SettingsEnhanced.UI.Windows
                 {
                     if (ImGui.BeginTabBar("ConfigTabs"))
                     {
-                        if (ImGui.BeginTabItem("System Configuration"))
+                        if (ImGui.BeginTabItem(Strings.UI_Configuration_ZoneConfig_SystemConfig))
                         {
                             if (ImGui.BeginChild("SystemConfChild"))
                             {
@@ -242,7 +243,7 @@ namespace SettingsEnhanced.UI.Windows
                             ImGui.EndTabItem();
                         }
 
-                        if (ImGui.BeginTabItem("Character Configuration"))
+                        if (ImGui.BeginTabItem(Strings.UI_Configuration_ZoneConfig_CharaConfig))
                         {
                             if (ImGui.BeginChild("CharConfigChild"))
                             {
@@ -264,7 +265,7 @@ namespace SettingsEnhanced.UI.Windows
                 ImGui.Separator();
 
                 ImGui.BeginDisabled(!this.canSaveSettings);
-                if (ImGui.Button("Apply Settings"))
+                if (ImGui.Button(Strings.UI_Configuration_ZoneConfig_ApplyButton))
                 {
                     // Set or remove configurations depending on if they have any persists left.
                     if (this.selectedItem.SystemConfiguration.AnyPersistedProperties())
@@ -292,7 +293,7 @@ namespace SettingsEnhanced.UI.Windows
                 ImGui.EndDisabled();
                 ImGui.SameLine();
                 ImGui.BeginDisabled(!ImGui.IsKeyDown(ImGuiKey.LeftShift));
-                if (ImGui.Button("Delete Settings"))
+                if (ImGui.Button(Strings.UI_Configuration_ZoneConfig_DeleteButton))
                 {
                     this.canSaveSettings = false;
                     var configsDeleted = false;
@@ -313,7 +314,7 @@ namespace SettingsEnhanced.UI.Windows
                     }
                 }
                 ImGui.EndDisabled();
-                ImGuiComponents.HelpMarker("Hold 'Left Shift' to enable deletion. Your original settings will be automatically reapplied.");
+                ImGuiComponents.HelpMarker(Strings.UI_Configuration_ZoneConfig_DeleteButton_Hint);
             }
         }
 
@@ -415,7 +416,7 @@ namespace SettingsEnhanced.UI.Windows
             }
             if (ImGui.IsItemHovered())
             {
-                ImGui.SetTooltip("Reset this option to its original value");
+                ImGui.SetTooltip(Strings.UI_Configuration_ZoneConfig_ResetToDefault);
             }
             ImGui.EndDisabled();
         }
@@ -424,7 +425,7 @@ namespace SettingsEnhanced.UI.Windows
         {
             var enumValues = Enum.GetValues(prop.PropertyType).Cast<Enum>().ToArray();
             var value = prop.GetValue(configuration) as Enum;
-            if (ImGui.BeginCombo(displayName, value?.ToString() ?? "None"))
+            if (ImGui.BeginCombo(displayName, value?.ToString() ?? Strings.UI_Configuration_ZoneConfig_EnumFallback))
             {
                 foreach (var enumValue in enumValues)
                 {

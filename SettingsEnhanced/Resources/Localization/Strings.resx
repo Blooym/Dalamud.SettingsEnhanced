@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>1.3</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Notification_ConfigurationModified_Title" xml:space="preserve">
+    <value>Configuration Modified</value>
+  </data>
+  <data name="Notification_ConfigurationModified_Content" xml:space="preserve">
+    <value>Zone configuration applied</value>
+  </data>
+  <data name="Notification_ConfigurationRestored_Title" xml:space="preserve">
+    <value>Configuration Restored</value>
+  </data>
+  <data name="Notification_ConfigurationRestored_Content" xml:space="preserve">
+    <value>Game configuration data restored</value>
+  </data>
+  <data name="UI_Titlebar_SupportDeveloper" xml:space="preserve">
+    <value>Support the developer</value>
+  </data>
+  <data name="UI_Titlebar_Repository" xml:space="preserve">
+    <value>Repository</value>
+  </data>
+  <data name="UI_Configuration_WarningTitle" xml:space="preserve">
+    <value>IMPORTANT NOTICE</value>
+  </data>
+  <data name="UI_Configuration_WarningText1" xml:space="preserve">
+    <value>This plugin automatically modifies your game settings based on your configuration.</value>
+  </data>
+  <data name="UI_Configuration_WarningText2" xml:space="preserve">
+    <value>The developer has worked hard to minimize the risk of data loss due to bugs or crashes; However, you should still make regular backups using the official configuration backup tool (available in the character menu) while using this plugin.</value>
+  </data>
+  <data name="UI_Configuration_WarningText3" xml:space="preserve">
+    <value>It's crucial that you back up your settings frequently to prevent any potential issues.</value>
+  </data>
+  <data name="UI_Configuration_WarningText4" xml:space="preserve">
+    <value>You will not be able to use this plugin until you've made at least one server backup. This is to ensure your settings can be restored if necessary.</value>
+  </data>
+  <data name="UI_Configuration_WarningText5" xml:space="preserve">
+    <value>By continuing, you acknowledge the risks and agree to regularly back up your settings as advised.</value>
+  </data>
+  <data name="UI_Configuration_WarningBackupRequired" xml:space="preserve">
+    <value>You must create a server backup before proceeding.</value>
+  </data>
+  <data name="UI_Configuration_WarningContinueButton" xml:space="preserve">
+    <value>I acknowledge the risks and wish to continue</value>
+  </data>
+  <data name="UI_Configuration_WarningContinueHint" xml:space="preserve">
+    <value>Hold 'Left Shift' to activate the button</value>
+  </data>
+  <data name="UI_Configuration_SettingsType_Zone_Title" xml:space="preserve">
+    <value>Currently using zone settings</value>
+  </data>
+  <data name="UI_Configuration_SettingsType_Zone_Description" xml:space="preserve">
+    <value>Changing a setting you have overwritten in this zone via the in-game options menu will only apply temporarily and will not be saved.
+
+Changing any setting you have not overwritten will apply to your global game configuration as normal.</value>
+  </data>
+  <data name="UI_Configuration_SettingsType_Game_Title" xml:space="preserve">
+    <value>Currently using game settings</value>
+  </data>
+  <data name="UI_Configuration_SettingsType_Game_Description" xml:space="preserve">
+    <value>All changes to your settings will work as normal.</value>
+  </data>
+  <data name="UI_Configuration_Zonelist_CustomSettings" xml:space="preserve">
+    <value>Custom Settings</value>
+  </data>
+  <data name="UI_Configuration_Zonelist_DefaultSettings" xml:space="preserve">
+    <value>Default Settings</value>
+  </data>
+  <data name="UI_Configuration_ZoneConfig_SystemConfig" xml:space="preserve">
+    <value>System Configuration</value>
+  </data>
+  <data name="UI_Configuration_ZoneConfig_CharaConfig" xml:space="preserve">
+    <value>Character Configuration</value>
+  </data>
+  <data name="UI_Configuration_ZoneConfig_ApplyButton" xml:space="preserve">
+    <value>Apply Settings</value>
+  </data>
+  <data name="UI_Configuration_ZoneConfig_DeleteButton" xml:space="preserve">
+    <value>Delete Settings</value>
+  </data>
+  <data name="UI_Configuration_ZoneConfig_DeleteButton_Hint" xml:space="preserve">
+    <value>Hold 'Left Shift' to enable deletion. Your original settings will be automatically reapplied.</value>
+  </data>
+  <data name="UI_Configuration_ZoneConfig_ResetToDefault" xml:space="preserve">
+    <value>Reset this option to its original value</value>
+  </data>
+  <data name="UI_Configuration_ZoneConfig_EnumFallback" xml:space="preserve">
+    <value>None</value>
+  </data>
+</root>

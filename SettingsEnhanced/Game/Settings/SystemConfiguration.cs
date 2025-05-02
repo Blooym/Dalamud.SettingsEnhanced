@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SettingsEnhanced.Game.Settings.Attributes;
 using SettingsEnhanced.Game.Settings.Interfaces;
+using SettingsEnhanced.Game.Settings.Util;
 
 namespace SettingsEnhanced.Game.Settings
 {
@@ -225,7 +226,7 @@ namespace SettingsEnhanced.Game.Settings
             foreach (var prop in typeof(SystemConfiguration).GetProperties(Plugin.ConfigReflectionBindingFlags))
             {
                 var configOptionAttribute = prop.GetCustomAttribute<ConfigurationItemAttribute>();
-                if (configOptionAttribute != null && GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ConfigOption, prop.PropertyType, out var value) && value is not null)
+                if (configOptionAttribute != null && GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ConfigOption, prop.PropertyType, out var value))
                 {
                     prop.SetValue(systemConfiguration, value);
                 }

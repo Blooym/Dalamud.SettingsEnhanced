@@ -15,13 +15,13 @@ namespace SettingsEnhanced.Configuration
         public int Version { get; set; }
 
         /// <summary>
-        ///     Whether or not the first time run warning has been read.
+        ///     Whether the first time run warning has been read.
         ///     No user interface operations can be done until this is true.
         /// </summary>
         public bool UiWarningAccepted;
 
         /// <summary>
-        ///     Whether or not the System Configuration in the current game state were modified by the plugin.
+        ///     Whether the System Configuration in the current game state were modified by the plugin.
         /// </summary>
         /// <remarks>
         ///     If a user disables this plugin original settings are restored, this is set to true before shutdown.
@@ -31,7 +31,7 @@ namespace SettingsEnhanced.Configuration
         public bool SystemConfigurationOverwritten;
 
         /// <summary>
-        ///     Whether or not the Ui Configuration in the current game state were modified by the plugin.
+        ///     Whether the Ui Configuration in the current game state were modified by the plugin.
         /// </summary>
         /// <remarks>
         ///     If a user disables this plugin original settings are restored, this is set to true before shutdown.
@@ -48,17 +48,17 @@ namespace SettingsEnhanced.Configuration
         /// <summary>
         ///     A snapshot of the game's Ui Configuration without plugin modification.
         /// </summary>
-        public Dictionary<ulong, UiConfiguration> OriginalUiConfiguration = [];
+        public readonly Dictionary<ulong, UiConfiguration> OriginalUiConfiguration = [];
 
         /// <summary>
         ///     Per-territory System Configuration.
         /// </summary>
-        public Dictionary<ushort, SystemConfiguration> TerritorySystemConfiguration = [];
+        public readonly Dictionary<ushort, SystemConfiguration> TerritorySystemConfiguration = [];
 
         /// <summary>
         ///     Per-territory Ui Configuration.
         /// </summary>
-        public Dictionary<ushort, UiConfiguration> TerritoryUiConfiguration = [];
+        public readonly Dictionary<ushort, UiConfiguration> TerritoryUiConfiguration = [];
 
         /// <summary>
         ///     Save the current value of the plugin configuration.

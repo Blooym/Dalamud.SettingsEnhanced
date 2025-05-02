@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SettingsEnhanced.Game.Settings.Attributes;
 using SettingsEnhanced.Game.Settings.Interfaces;
+using SettingsEnhanced.Game.Settings.Util;
 
 namespace SettingsEnhanced.Game.Settings
 {
@@ -365,7 +366,7 @@ namespace SettingsEnhanced.Game.Settings
         public bool HudDisplayServerInfoServerTIme { get; set; }
 
         [ConfigurationItem(
-           name: "DIsplay current World name",
+           name: "Display current World name",
            interfaceGroup: "HUD Settings",
            configOption: UiConfigOption.InfoSettingDispWorldNameType,
            headerName: "Server Info Bar",
@@ -491,11 +492,11 @@ namespace SettingsEnhanced.Game.Settings
                 var configOptionAttribute = prop.GetCustomAttribute<ConfigurationItemAttribute>();
                 if (configOptionAttribute != null)
                 {
-                    if (configOptionAttribute.ConfigOption is not null && GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ConfigOption, prop.PropertyType, out var uiConfigValue) && uiConfigValue is not null)
+                    if (configOptionAttribute.ConfigOption is not null && GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ConfigOption, prop.PropertyType, out var uiConfigValue))
                     {
                         prop.SetValue(uiConfiguration, uiConfigValue);
                     }
-                    else if (configOptionAttribute.ControlOption is not null && GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ControlOption, prop.PropertyType, out var uiControlValue) && uiControlValue is not null)
+                    else if (configOptionAttribute.ControlOption is not null && GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ControlOption, prop.PropertyType, out var uiControlValue))
                     {
                         prop.SetValue(uiConfiguration, uiControlValue);
                     }
@@ -606,7 +607,7 @@ namespace SettingsEnhanced.Game.Settings
                         var value = jproperty.Value.ToObject(property.PropertyType, serializer);
                         existingValue.persistedProperties.Add(property.Name);
                         property.SetValue(existingValue, value);
-                        Plugin.Log.Verbose($"Deserialising persisted property {property.Name} ({property.MemberType}) on UiConfiguration");
+                        Plugin.Log.Verbose($"Deserializing persisted property {property.Name} ({property.MemberType}) on UiConfiguration");
                     }
                 }
                 return existingValue;

@@ -2,15 +2,15 @@ using System.Reflection;
 
 namespace SettingsEnhanced.Game.Settings.Interfaces
 {
-    public interface IGameConfiguration<TInner>
+    public interface IGameConfiguration<out TInner>
     {
         /// <summary>
-        ///     Persist all properties so they are kept after serialisation and deserialisation.
+        ///     Persist all properties so they are kept after serialisation and deserialization.
         /// </summary>
         public TInner PersistAllProperties();
 
         /// <summary>
-        ///     "De-persist" all properties so they are not kept after serialisation and deserialisation.
+        ///     "De-persist" all properties so they are not kept after serialisation and deserialization.
         /// </summary>
         public TInner DepersistAllProperties();
 

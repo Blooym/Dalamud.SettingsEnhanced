@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using Dalamud.Game.Config;
 
-namespace SettingsEnhanced
+namespace SettingsEnhanced.Game.Settings.Util
 {
     internal static class GameConfigUtil
     {

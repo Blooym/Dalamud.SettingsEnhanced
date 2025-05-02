@@ -16,7 +16,7 @@ using SettingsEnhanced.Game.Settings.Interfaces;
 
 namespace SettingsEnhanced.UI.Windows
 {
-    internal sealed partial class ConfigurationWindow : Window
+    internal sealed class ConfigurationWindow : Window
     {
         private sealed class SelectedItem
         {
@@ -70,12 +70,12 @@ namespace SettingsEnhanced.UI.Windows
                 new()
                 {
                     Icon = FontAwesomeIcon.Heart,
-                    Click= (mouseButton) => Util.OpenLink("https://go.blooym.dev/donate"),
+                    Click= (_) => Util.OpenLink("https://go.blooym.dev/donate"),
                     ShowTooltip = () => ImGui.SetTooltip("Support the developer"),
                 },
                 new() {
                     Icon = FontAwesomeIcon.Comment,
-                    Click = (mouseButton) => Util.OpenLink("https://github.com/Blooym/Dalamud.SettingsEnhanced"),
+                    Click = (_) => Util.OpenLink("https://github.com/Blooym/Dalamud.SettingsEnhanced"),
                     ShowTooltip = () => ImGui.SetTooltip("Repository"),
                 },
             ];
@@ -183,7 +183,10 @@ namespace SettingsEnhanced.UI.Windows
                     {
                         var currentTerritory = Plugin.ClientState.TerritoryType == id;
                         if (currentTerritory)
+                        {
                             ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudViolet);
+                        }
+
                         if (ImGui.Selectable($"{name}##{id}", id == this.selectedItem?.TerritoryId))
                         {
                             this.selectedItem = new()
@@ -203,7 +206,9 @@ namespace SettingsEnhanced.UI.Windows
                             };
                         }
                         if (currentTerritory)
+                        {
                             ImGui.PopStyleColor();
+                        }
                     }
                     ImGuiHelpers.ScaledDummy(8);
                 }
@@ -227,7 +232,7 @@ namespace SettingsEnhanced.UI.Windows
                             {
                                 foreach (var group in SystemConfigurationItemsGroup)
                                 {
-                                    if (ImGui.CollapsingHeader(group.Key.ToString()))
+                                    if (ImGui.CollapsingHeader(group.Key))
                                     {
                                         this.DrawConfigurationGroup<SystemConfiguration, SystemConfiguration.ConfigurationItemAttribute>(group, this.selectedItem.SystemConfiguration);
                                     }
@@ -243,7 +248,7 @@ namespace SettingsEnhanced.UI.Windows
                             {
                                 foreach (var group in UiConfigurationItemsGroup)
                                 {
-                                    if (ImGui.CollapsingHeader(group.Key.ToString()))
+                                    if (ImGui.CollapsingHeader(group.Key))
                                     {
                                         this.DrawConfigurationGroup<UiConfiguration, UiConfiguration.ConfigurationItemAttribute>(group, this.selectedItem.UiConfiguration);
                                     }
@@ -263,13 +268,23 @@ namespace SettingsEnhanced.UI.Windows
                 {
                     // Set or remove configurations depending on if they have any persists left.
                     if (this.selectedItem.SystemConfiguration.AnyPersistedProperties())
+                    {
                         Plugin.PluginConfiguration.TerritorySystemConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.SystemConfiguration;
+                    }
                     else
+                    {
                         Plugin.PluginConfiguration.TerritorySystemConfiguration.Remove(this.selectedItem.TerritoryId);
+                    }
+
                     if (this.selectedItem.UiConfiguration.AnyPersistedProperties())
+                    {
                         Plugin.PluginConfiguration.TerritoryUiConfiguration[this.selectedItem.TerritoryId] = this.selectedItem.UiConfiguration;
+                    }
                     else
+                    {
                         Plugin.PluginConfiguration.TerritoryUiConfiguration.Remove(this.selectedItem.TerritoryId);
+                    }
+
                     Plugin.PluginConfiguration.Save();
                     ConfigurationUpdated?.Invoke();
                     this.canSaveSettings = false;
@@ -312,7 +327,9 @@ namespace SettingsEnhanced.UI.Windows
             foreach (var subGroup in subGroups)
             {
                 if (!string.IsNullOrWhiteSpace(subGroup.Key))
-                    ImGui.TextDisabled(subGroup.Key.ToString());
+                {
+                    ImGui.TextDisabled(subGroup.Key);
+                }
 
                 foreach (var prop in subGroup)
                 {
@@ -337,13 +354,21 @@ namespace SettingsEnhanced.UI.Windows
             ImGui.SameLine();
 
             if (prop.PropertyType.IsEnum)
+            {
                 this.DrawEnumProperty(configuration, prop, displayName);
+            }
             else if (prop.PropertyType == typeof(uint))
+            {
                 this.DrawUintProperty(configuration, prop, displayName);
+            }
             else if (prop.PropertyType == typeof(bool))
+            {
                 this.DrawBoolProperty(configuration, prop, displayName);
+            }
             else if (prop.PropertyType == typeof(string))
+            {
                 this.DrawStringProperty(configuration, prop, displayName);
+            }
 
             if (configOptionAttribute?.Indented is true)
             {

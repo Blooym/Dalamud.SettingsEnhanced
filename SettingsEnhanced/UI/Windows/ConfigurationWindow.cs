@@ -12,6 +12,7 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
 using ImGuiNET;
+using SettingsEnhanced.Game.Extensions;
 using SettingsEnhanced.Game.Settings;
 using SettingsEnhanced.Game.Settings.Attributes;
 using SettingsEnhanced.Game.Settings.Interfaces;
@@ -32,25 +33,23 @@ namespace SettingsEnhanced.UI.Windows
 
         private const ImGuiWindowFlags NoScrollFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
         private static readonly Dictionary<uint, string> TerritoryList = Plugin.AllowedTerritories
-                .Where(t => !string.IsNullOrEmpty(t.PlaceName.Value.Name.ExtractText())
-                )
-                .OrderBy(x => x.PlaceName.Value.Name.ExtractText())
-                .ToDictionary(
-                    t => t.RowId,
-                    t => t.PlaceName.Value.Name.ExtractText()
-                );
+            .Select(t => new { t.RowId, TerritoryName = t.GetTerritoryName() })
+            .Where(t => !string.IsNullOrEmpty(t.TerritoryName))
+            .OrderBy(t => t.TerritoryName)
+            .ToDictionary(t => t.RowId, t => t.TerritoryName);
         private static readonly ImmutableArray<IGrouping<string, (PropertyInfo, UiSettingPropDisplayAttribute)>> SystemConfigurationItemsGroup =
             [.. typeof(SystemConfiguration)
                 .GetProperties(Plugin.ConfigReflectionBindingFlags)
-                .Where(p => p.GetCustomAttribute<SystemConfigurationItemAttribute>() != null)
                 .Select(p => (Property: p, Attribute: p.GetCustomAttribute<UiSettingPropDisplayAttribute>()!))
+                .Where(x => x.Attribute is not  null)
                 .GroupBy(x => x.Attribute.UiGroup)
                 .OrderBy(g => g.Key)];
+
         private static readonly ImmutableArray<IGrouping<string, (PropertyInfo, UiSettingPropDisplayAttribute)>> UiConfigurationItemsGroup =
             [.. typeof(UiConfiguration)
                 .GetProperties(Plugin.ConfigReflectionBindingFlags)
-                .Where(p => p.GetCustomAttribute<UiConfigurationItemAttribute>() != null)
                 .Select(p => (Property: p, Attribute: p.GetCustomAttribute<UiSettingPropDisplayAttribute>()!))
+                .Where(x => x.Attribute is not  null)
                 .GroupBy(x => x.Attribute.UiGroup)
                 .OrderBy(g => g.Key)];
 
@@ -170,13 +169,6 @@ namespace SettingsEnhanced.UI.Windows
 
         private void DrawSidebar()
         {
-            var filtered = TerritoryList
-                .Where(x => x.Value.Contains(this.searchText, StringComparison.InvariantCultureIgnoreCase));
-            var grouped = filtered
-                .GroupBy(x => Plugin.PluginConfiguration.TerritorySystemConfiguration.ContainsKey((ushort)x.Key)
-                        || Plugin.PluginConfiguration.TerritoryUiConfiguration.ContainsKey((ushort)x.Key))
-                .OrderByDescending(g => g.Key);
-
             using (var searchbarChild = ImRaii.Child("SearchbarChild", new(0, (25 * ImGuiHelpers.GlobalScale) - ImGui.GetContentRegionAvail().Y)))
             {
                 if (searchbarChild)
@@ -186,41 +178,44 @@ namespace SettingsEnhanced.UI.Windows
                 }
             }
             ImGui.Separator();
-
-            using (var searchResultsChild = ImRaii.Child("SearchResultsChild"))
+            using var searchResultsChild = ImRaii.Child("SearchResultsChild");
+            if (searchResultsChild)
             {
-                if (searchResultsChild)
+                foreach (var group in TerritoryList
+                    .Where(x => x.Value.Contains(this.searchText, StringComparison.InvariantCultureIgnoreCase))
+                    .GroupBy(x => Plugin.PluginConfiguration.TerritorySystemConfiguration.ContainsKey((ushort)x.Key)
+                                || Plugin.PluginConfiguration.TerritoryUiConfiguration.ContainsKey((ushort)x.Key))
+                    .OrderByDescending(g => g.Key))
                 {
-                    foreach (var group in grouped)
-                    {
-                        var hasSettings = group.Key;
-                        ImGui.TextDisabled(hasSettings ? Strings.UI_Configuration_Zonelist_CustomSettings : Strings.UI_Configuration_Zonelist_DefaultSettings);
-                        foreach (var (id, name) in group)
-                        {
-                            using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.DalamudViolet, id == Plugin.ClientState.TerritoryType))
-                            {
-                                if (ImGui.Selectable($"{name}##{id}", id == this.selectedItem?.TerritoryId))
-                                {
-                                    this.selectedItem = new()
-                                    {
-                                        TerritoryId = (ushort)id,
-                                        TerritoryName = name,
-                                        SystemConfiguration = Plugin.PluginConfiguration.TerritorySystemConfiguration
-                                        .GetValueOrDefault(
-                                            (ushort)id,
-                                            ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllProperties()
+                    var hasSettings = group.Key;
+                    ImGui.TextDisabled(hasSettings ? Strings.UI_Configuration_Zonelist_CustomSettings : Strings.UI_Configuration_Zonelist_DefaultSettings);
+                    ImGuiClip.ClippedDraw(group.ToImmutableList(), this.DrawTerritorySelectable, ImGui.GetTextLineHeightWithSpacing());
+                    ImGuiHelpers.ScaledDummy(8);
+                }
+            }
+        }
 
-                                        ),
-                                        UiConfiguration = Plugin.PluginConfiguration.TerritoryUiConfiguration.GetValueOrDefault(
-                                            (ushort)id,
-                                            ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.CurrentPlayerContentId].Clone()).DepersistAllProperties()
-                                        )
-                                    };
-                                }
-                            }
-                        }
-                        ImGuiHelpers.ScaledDummy(8);
-                    }
+        private void DrawTerritorySelectable(KeyValuePair<uint, string> item)
+        {
+            using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.DalamudViolet, item.Key == Plugin.ClientState.TerritoryType))
+            {
+                if (ImGui.Selectable($"{item.Value}##{item.Key}", item.Key == this.selectedItem?.TerritoryId))
+                {
+                    this.selectedItem = new()
+                    {
+                        TerritoryId = (ushort)item.Key,
+                        TerritoryName = item.Value,
+                        SystemConfiguration = Plugin.PluginConfiguration.TerritorySystemConfiguration
+                        .GetValueOrDefault(
+                            (ushort)item.Key,
+                            ((SystemConfiguration)Plugin.PluginConfiguration.OriginalSystemConfiguration.Clone()).DepersistAllProperties()
+
+                        ),
+                        UiConfiguration = Plugin.PluginConfiguration.TerritoryUiConfiguration.GetValueOrDefault(
+                            (ushort)item.Key,
+                            ((UiConfiguration)Plugin.PluginConfiguration.OriginalUiConfiguration[Plugin.CurrentPlayerContentId].Clone()).DepersistAllProperties()
+                        )
+                    };
                 }
             }
         }
@@ -347,7 +342,6 @@ namespace SettingsEnhanced.UI.Windows
                 {
                     ImGui.TextDisabled(subGroup.Key);
                 }
-
                 foreach (var (propInfo, displayInfo) in subGroup)
                 {
                     this.DrawConfigurationProperty(propInfo, displayInfo, configuration);
@@ -358,33 +352,26 @@ namespace SettingsEnhanced.UI.Windows
 
         private void DrawConfigurationProperty<TConfig>(PropertyInfo prop, UiSettingPropDisplayAttribute display, TConfig configuration) where TConfig : IGameConfiguration<TConfig>
         {
-            if (display.UiIndented)
+            using (ImRaii.PushIndent(15f, true, display.UiIndented))
             {
-                ImGui.Indent();
-            }
-            this.DrawPropertyResetButton(configuration, prop);
-            ImGui.SameLine();
-
-            if (prop.PropertyType.IsEnum)
-            {
-                this.DrawEnumProperty(configuration, prop, display.UiName);
-            }
-            else if (prop.PropertyType == typeof(uint))
-            {
-                this.DrawUintProperty(configuration, prop, display.UiName);
-            }
-            else if (prop.PropertyType == typeof(bool))
-            {
-                this.DrawBoolProperty(configuration, prop, display.UiName);
-            }
-            else if (prop.PropertyType == typeof(string))
-            {
-                this.DrawStringProperty(configuration, prop, display.UiName);
-            }
-
-            if (display.UiIndented)
-            {
-                ImGui.Unindent();
+                this.DrawPropertyResetButton(configuration, prop);
+                ImGui.SameLine();
+                if (prop.PropertyType.IsEnum)
+                {
+                    this.DrawEnumProperty(configuration, prop, display.UiName);
+                }
+                else if (prop.PropertyType == typeof(uint))
+                {
+                    this.DrawUintProperty(configuration, prop, display.UiName);
+                }
+                else if (prop.PropertyType == typeof(bool))
+                {
+                    this.DrawBoolProperty(configuration, prop, display.UiName);
+                }
+                else if (prop.PropertyType == typeof(string))
+                {
+                    this.DrawStringProperty(configuration, prop, display.UiName);
+                }
             }
         }
 

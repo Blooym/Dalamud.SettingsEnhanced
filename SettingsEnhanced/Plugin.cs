@@ -260,7 +260,7 @@ namespace SettingsEnhanced
         /// </summary>
         private void OnUiConfigChanged(object? sender, ConfigChangeEvent e)
         {
-            if (CurrentPlayerContentId == 0)
+            if (CurrentPlayerContentId is 0)
             {
                 return;
             }
@@ -299,7 +299,7 @@ namespace SettingsEnhanced
         /// </summary>
         private void OnUiControlChanged(object? sender, ConfigChangeEvent e)
         {
-            if (CurrentPlayerContentId == 0)
+            if (CurrentPlayerContentId is 0)
             {
                 return;
             }

@@ -9,6 +9,5 @@ namespace SettingsEnhanced.Game.Extensions
             (uint)TerritoryIntendedUse.Dungeon or (uint)TerritoryIntendedUse.Trial or (uint)TerritoryIntendedUse.AllianceRaid or (uint)TerritoryIntendedUse.Raids or (uint)TerritoryIntendedUse.RaidFights => t.ContentFinderCondition.Value.Name.ExtractText(),
             _ => t.PlaceName.Value.Name.ExtractText(),
         };
-
     }
 }

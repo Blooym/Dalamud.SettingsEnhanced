@@ -246,7 +246,7 @@ namespace SettingsEnhanced.Game.Settings
             foreach (var prop in typeof(UiConfiguration).GetProperties(Plugin.ConfigReflectionBindingFlags))
             {
                 var configOptionAttribute = prop.GetCustomAttribute<UiConfigurationItemAttribute>();
-                if (configOptionAttribute != null)
+                if (configOptionAttribute is not null)
                 {
                     if (configOptionAttribute.ConfigOption is not null && GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ConfigOption, prop.PropertyType, out var uiConfigValue))
                     {
@@ -272,7 +272,7 @@ namespace SettingsEnhanced.Game.Settings
                 .Where(p => !onlyApplyModified || this.modifiedProperties.Contains(p.Name)))
             {
                 var configOptionAttribute = prop.GetCustomAttribute<UiConfigurationItemAttribute>();
-                if (configOptionAttribute != null)
+                if (configOptionAttribute is not null)
                 {
                     var value = prop.GetValue(this);
                     if (value is null)
@@ -357,7 +357,7 @@ namespace SettingsEnhanced.Game.Settings
                 foreach (var jproperty in jObject.Properties())
                 {
                     var property = objectType.GetProperty(jproperty.Name);
-                    if (property != null)
+                    if (property is not null)
                     {
                         var value = jproperty.Value.ToObject(property.PropertyType, serializer);
                         existingValue.persistedProperties.Add(property.Name);

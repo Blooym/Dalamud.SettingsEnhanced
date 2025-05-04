@@ -32,30 +32,46 @@ namespace SettingsEnhanced.UI.Windows
         }
 
         private const ImGuiWindowFlags NoScrollFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
+
         private static readonly Dictionary<uint, string> TerritoryList = Plugin.AllowedTerritories
             .Select(t => new { t.RowId, TerritoryName = t.GetTerritoryName() })
             .Where(t => !string.IsNullOrEmpty(t.TerritoryName))
             .OrderBy(t => t.TerritoryName)
             .ToDictionary(t => t.RowId, t => t.TerritoryName);
-        private static readonly ImmutableArray<IGrouping<string, (PropertyInfo, UiSettingPropDisplayAttribute)>> SystemConfigurationItemsGroup =
+        private static readonly ImmutableArray<IGrouping<string, (PropertyInfo, UiSettingPropDisplayAttribute)>> SystemConfigurationGroups =
             [.. typeof(SystemConfiguration)
                 .GetProperties(Plugin.ConfigReflectionBindingFlags)
                 .Select(p => (Property: p, Attribute: p.GetCustomAttribute<UiSettingPropDisplayAttribute>()!))
                 .Where(x => x.Attribute is not  null)
                 .GroupBy(x => x.Attribute.UiGroup)
                 .OrderBy(g => g.Key)];
-
-        private static readonly ImmutableArray<IGrouping<string, (PropertyInfo, UiSettingPropDisplayAttribute)>> UiConfigurationItemsGroup =
+        private static readonly ImmutableArray<IGrouping<string, (PropertyInfo, UiSettingPropDisplayAttribute)>> UiConfigurationGroups =
             [.. typeof(UiConfiguration)
                 .GetProperties(Plugin.ConfigReflectionBindingFlags)
                 .Select(p => (Property: p, Attribute: p.GetCustomAttribute<UiSettingPropDisplayAttribute>()!))
                 .Where(x => x.Attribute is not  null)
                 .GroupBy(x => x.Attribute.UiGroup)
                 .OrderBy(g => g.Key)];
+        private static readonly Dictionary<Type, Dictionary<Enum, string>> EnumAddonTextCache =
+            Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => t.IsEnum)
+                .Select(enumType => new
+                {
+                    EnumType = enumType,
+                    Names = Enum.GetValues(enumType).Cast<Enum>().ToDictionary(
+                        ev => ev,
+                        ev =>
+                        {
+                            var member = enumType.GetMember(ev.ToString()).FirstOrDefault();
+                            return member?.GetCustomAttribute<UiSettingEnumAddonIdAttribute>()?.UiName ?? ev.ToString();
+                        })
+                })
+                .ToDictionary(x => x.EnumType, x => x.Names);
 
         private string searchText = "";
         private bool canSaveSettings;
         private SelectedItem? selectedItem;
+
         public static event Action? ConfigurationUpdated;
 
         public ConfigurationWindow() : base("Settings Enhanced")
@@ -241,7 +257,7 @@ namespace SettingsEnhanced.UI.Windows
                                         using var configChild = ImRaii.Child("SystemConfChild");
                                         if (configChild)
                                         {
-                                            foreach (var group in SystemConfigurationItemsGroup)
+                                            foreach (var group in SystemConfigurationGroups)
                                             {
                                                 if (ImGui.CollapsingHeader(group.Key))
                                                 {
@@ -259,7 +275,7 @@ namespace SettingsEnhanced.UI.Windows
                                         using var configChild = ImRaii.Child("CharConfigChild");
                                         if (configChild)
                                         {
-                                            foreach (var group in UiConfigurationItemsGroup)
+                                            foreach (var group in UiConfigurationGroups)
                                             {
                                                 if (ImGui.CollapsingHeader(group.Key))
                                                 {
@@ -386,7 +402,7 @@ namespace SettingsEnhanced.UI.Windows
                         if (Plugin.PluginConfiguration.OriginalUiConfiguration.TryGetValue(Plugin.CurrentPlayerContentId, out var uiConfig))
                         {
                             var propertyValue = typeof(UiConfiguration).GetProperty(prop.Name)?.GetValue(uiConfig);
-                            if (propertyValue != null)
+                            if (propertyValue is not null)
                             {
                                 configuration.SetPropertyValue(prop, propertyValue);
                                 configuration.DepersistProperty(prop);
@@ -422,28 +438,26 @@ namespace SettingsEnhanced.UI.Windows
 
         private void DrawEnumProperty<T>(T configuration, PropertyInfo prop, string displayName) where T : IGameConfiguration<T>
         {
-            // TODO: Optimise this to pre-compute names at startup
-            var enumValues = Enum.GetValues(prop.PropertyType).Cast<Enum>().ToArray();
-            var value = prop.GetValue(configuration) as Enum;
-            var displayNames = enumValues.ToDictionary(
-                ev => ev,
-                ev =>
-                {
-                    var member = ev.GetType().GetMember(ev.ToString()).FirstOrDefault();
-                    return member?.GetCustomAttribute<UiSettingEnumAddonIdAttribute>()?.UiName ?? ev.ToString();
-                }
-            );
-            var displayValue = value is not null && displayNames.TryGetValue(value, out var name) ? name : Strings.UI_Configuration_ZoneConfig_EnumFallback;
+            if (!EnumAddonTextCache.TryGetValue(prop.PropertyType, out var cacheItem))
+            {
+                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudRed, $"Failed to read text cache entry for {prop.PropertyType}");
+                return;
+            }
+
+            var enumValue = prop.GetValue(configuration) as Enum;
+            var displayValue = (enumValue is not null && cacheItem.TryGetValue(enumValue, out var name))
+                ? name
+                : Strings.UI_Configuration_ZoneConfig_EnumFallback;
+
             using (var combo = ImRaii.Combo(displayName, displayValue))
             {
                 if (combo)
                 {
-                    foreach (var enumValue in enumValues)
+                    foreach (var entry in cacheItem)
                     {
-                        var isSelected = enumValue.Equals(value);
-                        if (ImGui.Selectable(displayNames[enumValue], isSelected))
+                        if (ImGui.Selectable(entry.Value, entry.Value.Equals(enumValue)))
                         {
-                            configuration.SetPropertyValue(prop, Enum.ToObject(prop.PropertyType, enumValue));
+                            configuration.SetPropertyValue(prop, Enum.ToObject(prop.PropertyType, entry.Key));
                             configuration.PersistProperty(prop);
                             this.canSaveSettings = true;
                         }

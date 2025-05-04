@@ -99,7 +99,7 @@ namespace SettingsEnhanced.Configuration
         /// </remarks>
         public bool WriteNewUiConfigOriginalSafe(ulong playerContentId)
         {
-            if (playerContentId == 0 || this.UiConfigurationOverwritten)
+            if (playerContentId is 0 || this.UiConfigurationOverwritten)
             {
                 Plugin.Log.Debug("Ignoring WriteNewUiConfigOriginalSafe call because it is not currently safe to do so");
                 return false;

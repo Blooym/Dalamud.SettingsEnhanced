@@ -443,24 +443,21 @@ namespace SettingsEnhanced.UI.Windows
                 ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudRed, $"Failed to read text cache entry for {prop.PropertyType}");
                 return;
             }
-
             var enumValue = prop.GetValue(configuration) as Enum;
             var displayValue = (enumValue is not null && cacheItem.TryGetValue(enumValue, out var name))
                 ? name
                 : Strings.UI_Configuration_ZoneConfig_EnumFallback;
 
-            using (var combo = ImRaii.Combo(displayName, displayValue))
+            using var combo = ImRaii.Combo(displayName, displayValue);
+            if (combo)
             {
-                if (combo)
+                foreach (var entry in cacheItem)
                 {
-                    foreach (var entry in cacheItem)
+                    if (ImGui.Selectable(entry.Value))
                     {
-                        if (ImGui.Selectable(entry.Value, entry.Value.Equals(enumValue)))
-                        {
-                            configuration.SetPropertyValue(prop, Enum.ToObject(prop.PropertyType, entry.Key));
-                            configuration.PersistProperty(prop);
-                            this.canSaveSettings = true;
-                        }
+                        configuration.SetPropertyValue(prop, Enum.ToObject(prop.PropertyType, entry.Key));
+                        configuration.PersistProperty(prop);
+                        this.canSaveSettings = true;
                     }
                 }
             }

@@ -19,6 +19,55 @@ namespace SettingsEnhanced.Game.Settings
         // Available Configuration Fields
         // Do not change the Property Name of these, it'll break a configuration file.
 
+        [SystemConfigurationItem(SystemConfigOption.IsSoundAlways)]
+        [UiSettingPropDisplay(4041, 4171, 0)]
+        public bool PlaySoundsWhenInactiveAll { get; private set; }
+
+        [SystemConfigurationItem(SystemConfigOption.IsSoundBgmAlways)]
+        [UiSettingPropDisplay(8686, 4171, 0, true)]
+        public bool PlaySoundsWhenInactiveBgm { get; private set; }
+
+        [SystemConfigurationItem(SystemConfigOption.IsSoundSeAlways)]
+        [UiSettingPropDisplay(8687, 4171, 0, true)]
+        public bool PlaySoundsWhenInactiveSfx { get; private set; }
+
+        [SystemConfigurationItem(SystemConfigOption.IsSoundVoiceAlways)]
+        [UiSettingPropDisplay(8688, 4171, 0, true)]
+        public bool PlaySoundsWhenInactiveVoice { get; private set; }
+
+        [SystemConfigurationItem(SystemConfigOption.IsSoundSystemAlways)]
+        [UiSettingPropDisplay(8689, 4171, 0, true)]
+        public bool PlaySoundsWhenInactiveSystem { get; private set; }
+
+        [SystemConfigurationItem(SystemConfigOption.IsSoundEnvAlways)]
+        [UiSettingPropDisplay(8690, 4171, 0, true)]
+        public bool PlaySoundsWhenInactiveEnv { get; private set; }
+
+        [SystemConfigurationItem(SystemConfigOption.IsSoundPerformAlways)]
+        [UiSettingPropDisplay(8685, 4171, 0, true)]
+        public bool PlaySoundsWhenInactivePerform { get; private set; }
+
+        [SystemConfigurationItem(SystemConfigOption.SoundChocobo)]
+        [UiSettingPropDisplay(4042, 4171, 0)]
+        public bool PlayMusicWhenMounted { get; private set; }
+
+        [SystemConfigurationItem(SystemConfigOption.SoundFieldBattle)]
+        [UiSettingPropDisplay(8733, 4171, 0)]
+        public bool EnableNormalBattleMusic { get; private set; }
+
+        [SystemConfigurationItem(SystemConfigOption.SoundHousing)]
+        [UiSettingPropDisplay(8734, 4171, 0)]
+        public bool EnableCityMusicInResidentialAreas { get; private set; }
+
+        [SystemConfigurationItem(SystemConfigOption.SoundCfTimeCount)]
+        [UiSettingPropDisplay(4056, 4171, 0)]
+        public bool PlaySystemSoundsWaitingForDutyFinder { get; private set; }
+
+        [SystemConfigurationItem(SystemConfigOption.SoundMicpos)]
+        [UiSettingPropDisplay(4043, 4171, 0)]
+        [ConfigurationInputRange(0, 100)]
+        public uint SoundListeningPosition { get; private set; }
+
         [SystemConfigurationItem(SystemConfigOption.SoundMaster)]
         [UiSettingPropDisplay(4047, 4171, 4046)]
         [ConfigurationInputRange(0, 100)]
@@ -69,10 +118,18 @@ namespace SettingsEnhanced.Game.Settings
         [ConfigurationInputRange(0, 100)]
         public uint PlayerEffectsOtherPCsVolume { get; private set; }
 
+        [SystemConfigurationItem(SystemConfigOption.SoundPadSeType)]
+        [UiSettingPropDisplay(8203, 4171, 8759)]
+        public DualSenseSpeakerSoundType DualSenseSpeakerSoundType { get; private set; }
+
         [SystemConfigurationItem(SystemConfigOption.SoundPad)]
         [UiSettingPropDisplay(8202, 4171, 8759)]
         [ConfigurationInputRange(0, 100)]
         public uint DualSenseSpeakerVolume { get; private set; }
+
+        [SystemConfigurationItem(SystemConfigOption.SoundEqualizerType)]
+        [UiSettingPropDisplay(8737, 4171, 8736)]
+        public SoundEqualizerType SoundEqualizerMode { get; private set; }
 
         [SystemConfigurationItem(SystemConfigOption.DisplayObjectLimitType)]
         [UiSettingPropDisplay(8205, 4177, 8205)]

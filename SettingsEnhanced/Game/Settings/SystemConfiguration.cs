@@ -202,6 +202,7 @@ namespace SettingsEnhanced.Game.Settings
 
         private sealed class JsonConverter : JsonConverter<SystemConfiguration>
         {
+            /// <inheritdoc />
             public override void WriteJson(JsonWriter writer, SystemConfiguration? value, JsonSerializer serializer)
             {
                 if (value is null)
@@ -221,6 +222,7 @@ namespace SettingsEnhanced.Game.Settings
                 onlyPersisted.WriteTo(writer);
             }
 
+            /// <inheritdoc />
             public override SystemConfiguration ReadJson(JsonReader reader, Type objectType, SystemConfiguration? existingValue, bool hasExistingValue, JsonSerializer serializer)
             {
                 existingValue = FromGame();

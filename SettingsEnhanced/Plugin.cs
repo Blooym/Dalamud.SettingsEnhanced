@@ -24,7 +24,7 @@ namespace SettingsEnhanced
 
     internal sealed class Plugin : IDalamudPlugin
     {
-        // SAFETY: valid from plugin start.
+        // Safety: valid from plugin start.
 #pragma warning disable CS8618
         [PluginService] public static IDalamudPluginInterface PluginInterface { get; set; }
         [PluginService] public static IClientState ClientState { get; set; }
@@ -35,39 +35,66 @@ namespace SettingsEnhanced
         private static WindowManager WindowManager { get; set; }
         private static LocalizationManager LocalizationManager { get; set; }
         public static PluginConfiguration PluginConfiguration { get; private set; }
-        public static ImmutableArray<LuminaSheets.TerritoryType> AllowedTerritories;
+        public static ImmutableArray<LuminaSheets.TerritoryType> EnabledTerritories;
         public static ExcelSheet<LuminaSheets.Addon> AddonSheet;
 #pragma warning restore CS8618
 
-        private const uint NotificationShowSeconds = 4;
-        private static readonly uint[] AllowedTerritoryUse = [
-             (uint)TerritoryIntendedUse.Town,
-             (uint)TerritoryIntendedUse.OpenWorld,
-             (uint)TerritoryIntendedUse.Inn,
-             (uint)TerritoryIntendedUse.Dungeon,
-             (uint)TerritoryIntendedUse.AllianceRaid,
-             (uint)TerritoryIntendedUse.Trial,
-             (uint)TerritoryIntendedUse.HousingArea,
-             (uint)TerritoryIntendedUse.Raids,
-             (uint)TerritoryIntendedUse.RaidFights,
-             (uint)TerritoryIntendedUse.ChocoboSquare,
-             (uint)TerritoryIntendedUse.GoldSaucer,
-             (uint)TerritoryIntendedUse.FreeCompanyGarrison,
-             (uint)TerritoryIntendedUse.TreasureMapInstance,
-             (uint)TerritoryIntendedUse.Eureka,
-             (uint)TerritoryIntendedUse.LeapOfFaith,
-             (uint)TerritoryIntendedUse.MaskedCarnival,
-             (uint)TerritoryIntendedUse.OceanFishing,
-             (uint)TerritoryIntendedUse.Bozja,
-             (uint)TerritoryIntendedUse.CosmicExploration,
-        ];
+        /// <summary>
+        ///     How long all notifications will be shown to the user in seconds.
+        /// </summary>
+        private const uint NotificationShowDurationSecs = 4;
+
+        /// <summary>
+        ///     Binding flags to use when doing reflection on configuration classes.
+        /// </summary>
         public const BindingFlags ConfigReflectionBindingFlags = BindingFlags.Public | BindingFlags.Instance;
+
+
+        /// <summary>
+        ///     Territory use types that are enabled for use with this plugin.
+        /// </summary>
+        private static readonly uint[] EnabledTerritoryUse = [
+            (uint)TerritoryIntendedUse.Town,
+            (uint)TerritoryIntendedUse.OpenWorld,
+            (uint)TerritoryIntendedUse.Inn,
+            (uint)TerritoryIntendedUse.Dungeon,
+            (uint)TerritoryIntendedUse.VariantDungeon,
+            (uint)TerritoryIntendedUse.AllianceRaid,
+            (uint)TerritoryIntendedUse.Trial,
+            (uint)TerritoryIntendedUse.HousingArea,
+            (uint)TerritoryIntendedUse.Raids,
+            (uint)TerritoryIntendedUse.RaidFights,
+            (uint)TerritoryIntendedUse.GoldSaucer,
+            (uint)TerritoryIntendedUse.PalaceOfTheDead,
+            (uint)TerritoryIntendedUse.FreeCompanyGarrison,
+            (uint)TerritoryIntendedUse.TreasureMapInstance,
+            (uint)TerritoryIntendedUse.Eureka,
+            (uint)TerritoryIntendedUse.Bozja,
+            (uint)TerritoryIntendedUse.IslandSanctuary,
+            (uint)TerritoryIntendedUse.CriterionDungeon,
+            (uint)TerritoryIntendedUse.CriterionDungeonSavage,
+            (uint)TerritoryIntendedUse.LeapOfFaith,
+            (uint)TerritoryIntendedUse.MaskedCarnival,
+            (uint)TerritoryIntendedUse.CosmicExploration
+        ];
+
+        /// <summary>
+        ///     Territories that cannot be used with this plugin regardless of other conditions.
+        /// </summary>
+        private static readonly uint[] TerritoryIdBlocklist = [];
+
+        /// <summary>
+        ///     The local player's content id.
+        /// </summary>
+        /// <remarks>
+        ///     Handled by the plugin to allow for better logout/shutdown handling when the ID may be cleared from game memory.
+        /// </remarks>
         public static ulong CurrentPlayerContentId { get; private set; }
 
         public Plugin()
         {
             AddonSheet = DataManager.Excel.GetSheet<LuminaSheets.Addon>();
-            AllowedTerritories = [.. DataManager.Excel.GetSheet<LuminaSheets.TerritoryType>().Where(x => AllowedTerritoryUse.Contains(x.TerritoryIntendedUse.RowId) && !x.IsPvpZone)];
+            EnabledTerritories = [.. DataManager.Excel.GetSheet<LuminaSheets.TerritoryType>().Where(x => !TerritoryIdBlocklist.Contains(x.RowId) && EnabledTerritoryUse.Contains(x.TerritoryIntendedUse.RowId))];
             LocalizationManager = new();
             PluginConfiguration = PluginConfiguration.Load();
             WindowManager = new();
@@ -152,7 +179,7 @@ namespace SettingsEnhanced
             Log.Debug($"Checking if plugin should overwrite or restore game settings data for {territoryId}");
 
             // Explicitly remove configurations for territories that aren't allowed.
-            if (AllowedTerritories.All(x => territoryId != x.RowId))
+            if (EnabledTerritories.All(x => territoryId != x.RowId))
             {
                 Log.Warning($"Configuration contains a territory override for {territoryId} which isn't in the allowlist, it will be removed");
                 PluginConfiguration.TerritorySystemConfiguration.Remove(territoryId);
@@ -204,7 +231,7 @@ namespace SettingsEnhanced
                     {
                         Title = Strings.Notification_ConfigurationModified_Title,
                         Content = Strings.Notification_ConfigurationModified_Content,
-                        HardExpiry = DateTime.Now.AddSeconds(NotificationShowSeconds),
+                        HardExpiry = DateTime.Now.AddSeconds(NotificationShowDurationSecs),
                         Type = NotificationType.Info
                     });
                     break;
@@ -213,7 +240,7 @@ namespace SettingsEnhanced
                     {
                         Title = Strings.Notification_ConfigurationRestored_Title,
                         Content = Strings.Notification_ConfigurationRestored_Content,
-                        HardExpiry = DateTime.Now.AddSeconds(NotificationShowSeconds),
+                        HardExpiry = DateTime.Now.AddSeconds(NotificationShowDurationSecs),
                         Type = NotificationType.Info
                     });
                     break;
@@ -360,7 +387,7 @@ namespace SettingsEnhanced
                 {
                     Title = Strings.Notification_ConfigurationRestored_Title,
                     Content = Strings.Notification_ConfigurationRestored_Content,
-                    HardExpiry = DateTime.Now.AddSeconds(NotificationShowSeconds),
+                    HardExpiry = DateTime.Now.AddSeconds(NotificationShowDurationSecs),
                     Type = NotificationType.Info
                 });
             }

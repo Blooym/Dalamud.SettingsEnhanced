@@ -33,8 +33,8 @@ namespace SettingsEnhanced.UI.Windows
 
         private const ImGuiWindowFlags NoScrollFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
 
-        private static readonly Dictionary<uint, string> TerritoryList = Plugin.AllowedTerritories
-            .Select(t => new { t.RowId, TerritoryName = t.GetTerritoryName() })
+        private static readonly Dictionary<uint, string> TerritoryList = Plugin.EnabledTerritories
+            .Select(t => new { t.RowId, TerritoryName = t.GetName() })
             .Where(t => !string.IsNullOrEmpty(t.TerritoryName))
             .OrderBy(t => t.TerritoryName)
             .ToDictionary(t => t.RowId, t => t.TerritoryName);

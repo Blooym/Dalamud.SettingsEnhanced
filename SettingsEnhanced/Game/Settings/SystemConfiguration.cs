@@ -291,6 +291,7 @@ namespace SettingsEnhanced.Game.Settings
                     {
                         var value = jproperty.Value.ToObject(property.PropertyType, serializer);
                         existingValue.persistedProperties.Add(property.Name);
+                        existingValue.modifiedProperties.Add(property.Name);
                         property.SetValue(existingValue, value);
                         Plugin.Log.Verbose($"Deserialising persisted property {property.Name} ({property.MemberType}) on SystemConfiguration");
                     }

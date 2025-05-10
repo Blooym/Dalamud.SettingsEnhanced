@@ -176,6 +176,21 @@ namespace SettingsEnhanced.Game.Settings
         [UiSettingPropDisplay(7673, 7642, 7670, true)]
         public bool HudHidePartyListSolo { get; private set; }
 
+        [UiConfigurationItem(UiConfigOption.NamePlateDispTypeSelf)]
+        [UiSettingPropDisplay(7703, 7512, 7700)]
+        public DisplayNameSettings NamePlateDisplayTypeSelf { get; private set; }
+
+        [UiConfigurationItem(UiConfigOption.NamePlateDispTypeParty)]
+        [UiSettingPropDisplay(7703, 7512, 7710)]
+        public DisplayNameSettings NamePlateDisplayTypeParty { get; private set; }
+
+        [UiConfigurationItem(UiConfigOption.NamePlateDispTypeOther)]
+        [UiSettingPropDisplay(7703, 7512, 7712)]
+        public DisplayNameSettings NamePlateDisplayTypeOther { get; private set; }
+
+        [UiConfigurationItem(UiConfigOption.NamePlateDispTypeFriend)]
+        [UiSettingPropDisplay(7703, 7512, 7719)]
+        public DisplayNameSettings NamePlateDisplayTypeFriend { get; private set; }
 #pragma warning restore CS8618
 
 

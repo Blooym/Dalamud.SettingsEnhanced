@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Dalamud.Game.Config;
 using Newtonsoft.Json;
@@ -146,11 +145,6 @@ namespace SettingsEnhanced.Game.Settings
         /// </summary>
         private readonly HashSet<string> persistedProperties = [];
 
-        /// <summary>
-        ///     Properties that have been modified since the last time this configuration was applied.
-        /// </summary>
-        private readonly HashSet<string> modifiedProperties = [];
-
         /// <inheritdoc />
         public SystemConfiguration PersistAllProperties()
         {
@@ -188,7 +182,6 @@ namespace SettingsEnhanced.Game.Settings
                 throw new InvalidOperationException($"Property {prop} is read-only.");
             }
             prop.SetValue(this, value);
-            this.modifiedProperties.Add(prop.Name);
         }
 
         /// <inheritdoc />
@@ -219,12 +212,9 @@ namespace SettingsEnhanced.Game.Settings
         /// <summary>
         ///     Apply all settings in this instance to the current game settings.
         /// </summary>
-        /// <param name="onlyApplyModified">Only apply properties that have been modified since the last time this configuration was applied.</param>
-        public void ApplyToGame(bool onlyApplyModified)
+        public void ApplyToGame()
         {
-            foreach (var prop in typeof(SystemConfiguration)
-                    .GetProperties(Plugin.ConfigReflectionBindingFlags)
-                    .Where(p => !onlyApplyModified || this.modifiedProperties.Contains(p.Name)))
+            foreach (var prop in typeof(SystemConfiguration).GetProperties(Plugin.ConfigReflectionBindingFlags))
             {
                 var configOptionAttribute = prop.GetCustomAttribute<SystemConfigurationItemAttribute>();
                 if (configOptionAttribute is not null)
@@ -252,7 +242,6 @@ namespace SettingsEnhanced.Game.Settings
                     {
                         Plugin.GameConfig.Set(configOptionAttribute.ConfigOption, (string)value);
                     }
-                    this.modifiedProperties.Remove(prop.Name);
                 }
             }
         }
@@ -291,7 +280,6 @@ namespace SettingsEnhanced.Game.Settings
                     {
                         var value = jproperty.Value.ToObject(property.PropertyType, serializer);
                         existingValue.persistedProperties.Add(property.Name);
-                        existingValue.modifiedProperties.Add(property.Name);
                         property.SetValue(existingValue, value);
                         Plugin.Log.Verbose($"Deserialising persisted property {property.Name} ({property.MemberType}) on SystemConfiguration");
                     }

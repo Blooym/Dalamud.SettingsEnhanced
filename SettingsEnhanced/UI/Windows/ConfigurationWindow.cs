@@ -142,44 +142,37 @@ namespace SettingsEnhanced.UI.Windows
         {
             using (var uiMainChild = ImRaii.Child("UiWithSidebarChild", new(default, ImGui.GetContentRegionAvail().Y - (20 * ImGuiHelpers.GlobalScale)), false, NoScrollFlags))
             {
-                if (uiMainChild)
+                using var sidebarTable = ImRaii.Table("UiWithSidebarTable", 2);
+                if (sidebarTable)
                 {
-                    using (var sidebarTable = ImRaii.Table("UiWithSidebarTable", 2))
+                    ImGui.TableSetupColumn("Sidebar", ImGuiTableColumnFlags.WidthFixed, ImGui.GetContentRegionAvail().X * 0.28f);
+                    ImGui.TableSetupColumn("Main", ImGuiTableColumnFlags.WidthStretch);
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    using (var sidebarChild = ImRaii.Child("SidebarChild", default, true))
                     {
-                        if (sidebarTable)
+                        if (sidebarChild)
                         {
-                            ImGui.TableSetupColumn("Sidebar", ImGuiTableColumnFlags.WidthFixed, ImGui.GetContentRegionAvail().X * 0.28f);
-                            ImGui.TableSetupColumn("Main", ImGuiTableColumnFlags.WidthStretch);
-                            ImGui.TableNextRow();
-                            ImGui.TableNextColumn();
-                            using (var sidebarChild = ImRaii.Child("SidebarChild", default, true))
-                            {
-                                if (sidebarChild)
-                                {
-                                    this.DrawSidebar();
-                                }
-                            }
-                            ImGui.TableNextColumn();
-                            using (var mainContentChild = ImRaii.Child("MainContent", default, true, NoScrollFlags))
-                            {
-                                if (mainContentChild)
-                                {
-                                    this.DrawMainContent();
-                                }
-                            }
+                            this.DrawSidebar();
                         }
                     }
+                    ImGui.TableNextColumn();
+                    using var mainContentChild = ImRaii.Child("MainContent", default, true, NoScrollFlags);
+                    if (mainContentChild)
+                    {
+                        this.DrawMainContent();
+                    }
                 }
-                if (Plugin.PluginConfiguration.UiConfigurationOverwritten || Plugin.PluginConfiguration.SystemConfigurationOverwritten)
-                {
-                    ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudYellow, Strings.UI_Configuration_SettingsType_Zone_Title);
-                    ImGuiComponents.HelpMarker(Strings.UI_Configuration_SettingsType_Zone_Description, FontAwesomeIcon.QuestionCircle);
-                }
-                else
-                {
-                    ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.HealerGreen, Strings.UI_Configuration_SettingsType_Game_Title);
-                    ImGuiComponents.HelpMarker(Strings.UI_Configuration_SettingsType_Game_Description, FontAwesomeIcon.QuestionCircle);
-                }
+            }
+            if (Plugin.PluginConfiguration.UiConfigurationOverwritten || Plugin.PluginConfiguration.SystemConfigurationOverwritten)
+            {
+                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudYellow, Strings.UI_Configuration_SettingsType_Zone_Title);
+                ImGuiComponents.HelpMarker(Strings.UI_Configuration_SettingsType_Zone_Description, FontAwesomeIcon.QuestionCircle);
+            }
+            else
+            {
+                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.HealerGreen, Strings.UI_Configuration_SettingsType_Game_Title);
+                ImGuiComponents.HelpMarker(Strings.UI_Configuration_SettingsType_Game_Description, FontAwesomeIcon.QuestionCircle);
             }
         }
 
@@ -206,7 +199,6 @@ namespace SettingsEnhanced.UI.Windows
                     var hasSettings = group.Key;
                     ImGui.TextDisabled(hasSettings ? Strings.UI_Configuration_Zonelist_CustomSettings : Strings.UI_Configuration_Zonelist_DefaultSettings);
                     ImGuiClip.ClippedDraw(group.ToImmutableList(), this.DrawTerritorySelectable, ImGui.GetTextLineHeightWithSpacing());
-                    ImGuiHelpers.ScaledDummy(8);
                 }
             }
         }

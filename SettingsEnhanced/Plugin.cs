@@ -361,7 +361,6 @@ namespace SettingsEnhanced
             {
                 return;
             }
-            Log.Warning("trigger uicontrol");
 
             // Safety: prevent writes while plugin has applied overwrites.
             if (PluginConfiguration.UiConfigurationOverwritten)

@@ -160,7 +160,6 @@ namespace SettingsEnhanced
         private void OnLogin()
         {
             CurrentPlayerContentId = ClientState.LocalContentId;
-            PluginConfiguration = PluginConfiguration.Load(); // (Hack) FIXME: Reload config on login to force reload with chara ui config values.
             GameConfig.UiConfigChanged += this.OnUiConfigChanged;
             GameConfig.UiControlChanged += this.OnUiControlChanged;
             PluginConfiguration.WriteNewUiConfigOriginalSafe(CurrentPlayerContentId);

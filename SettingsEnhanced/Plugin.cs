@@ -114,14 +114,13 @@ namespace SettingsEnhanced
             ClientState.Logout += this.OnLogout;
             ClientState.TerritoryChanged += this.UpdateGameSettingsForTerritory;
             GameConfig.SystemChanged += OnSystemConfigUpdated;
-            GameConfig.UiConfigChanged += this.OnUiConfigChanged;
             ConfigurationWindow.ConfigurationUpdated += this.OnConfigurationWindowSave;
             PluginConfiguration.WriteNewSysConfigOriginalSafe();
             if (ClientState.IsLoggedIn)
             {
                 CurrentPlayerContentId = ClientState.LocalContentId;
                 GameConfig.UiConfigChanged += this.OnUiConfigChanged;
-                GameConfig.UiControlChanged += this.OnUiConfigChanged;
+                GameConfig.UiControlChanged += this.OnUiControlChanged;
                 PluginConfiguration.WriteNewUiConfigOriginalSafe(CurrentPlayerContentId);
                 Log.Information($"Plugin enabled whilst player logged in: triggering manual territory update");
                 this.UpdateGameSettingsForTerritory(ClientState.TerritoryType);
@@ -362,6 +361,7 @@ namespace SettingsEnhanced
             {
                 return;
             }
+            Log.Warning("trigger uicontrol");
 
             // Safety: prevent writes while plugin has applied overwrites.
             if (PluginConfiguration.UiConfigurationOverwritten)

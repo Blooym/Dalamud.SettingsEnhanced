@@ -212,5 +212,17 @@ namespace SettingsEnhanced.Resources.Localization {
                 return ResourceManager.GetString("UI_Configuration_ZoneConfig_EnumFallback", resourceCulture);
             }
         }
+        
+        internal static string Notification_BadConfigurationState_Title {
+            get {
+                return ResourceManager.GetString("Notification_BadConfigurationState_Title", resourceCulture);
+            }
+        }
+        
+        internal static string Notification_BadConfigurationState_Content {
+            get {
+                return ResourceManager.GetString("Notification_BadConfigurationState_Content", resourceCulture);
+            }
+        }
     }
 }

@@ -46,9 +46,9 @@ namespace SettingsEnhanced
 #pragma warning restore CS8618
 
         /// <summary>
-        ///     How long all notifications will be shown to the user in seconds.
+        ///     How long config change notifications will be shown to the user in seconds.
         /// </summary>
-        private const uint NotificationShowDurationSecs = 4;
+        private const uint ConfigChangeNotificationShowDurationSecs = 4;
 
         /// <summary>
         ///     Binding flags to use when doing reflection on configuration classes.
@@ -108,6 +108,16 @@ namespace SettingsEnhanced
             if (PluginConfiguration.SystemConfigurationOverwritten || PluginConfiguration.UiConfigurationOverwritten)
             {
                 Log.Warning($"Configuration data was not set back to default last plugin shutdown, possible game crash? SystemOverwritten: {PluginConfiguration.SystemConfigurationOverwritten} UIOverwritten: {PluginConfiguration.UiConfigurationOverwritten}");
+                NotificationManager.AddNotification(new()
+                {
+                    Title = Strings.Notification_BadConfigurationState_Title,
+                    Content = Strings.Notification_BadConfigurationState_Content,
+                    Type = NotificationType.Warning,
+                    Minimized = false,
+                    InitialDuration = TimeSpan.FromSeconds(15),
+                    ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(5),
+                    RespectUiHidden = false,
+                });
             }
 
             ClientState.Login += this.OnLogin;
@@ -150,6 +160,7 @@ namespace SettingsEnhanced
         private void OnLogin()
         {
             CurrentPlayerContentId = ClientState.LocalContentId;
+            PluginConfiguration = PluginConfiguration.Load(); // (Hack) FIXME: Reload config on login to force reload with chara ui config values.
             GameConfig.UiConfigChanged += this.OnUiConfigChanged;
             GameConfig.UiControlChanged += this.OnUiControlChanged;
             PluginConfiguration.WriteNewUiConfigOriginalSafe(CurrentPlayerContentId);
@@ -259,7 +270,7 @@ namespace SettingsEnhanced
                     {
                         Title = Strings.Notification_ConfigurationRestored_Title,
                         Content = Strings.Notification_ConfigurationRestored_Content,
-                        HardExpiry = DateTime.Now.AddSeconds(NotificationShowDurationSecs),
+                        HardExpiry = DateTime.Now.AddSeconds(ConfigChangeNotificationShowDurationSecs),
                         Type = NotificationType.Info
                     });
                     break;
@@ -268,7 +279,7 @@ namespace SettingsEnhanced
                     {
                         Title = Strings.Notification_ConfigurationModified_Title,
                         Content = Strings.Notification_ConfigurationModified_Content,
-                        HardExpiry = DateTime.Now.AddSeconds(NotificationShowDurationSecs),
+                        HardExpiry = DateTime.Now.AddSeconds(ConfigChangeNotificationShowDurationSecs),
                         Type = NotificationType.Info
                     });
                     break;
@@ -382,7 +393,7 @@ namespace SettingsEnhanced
         /// </summary>
         private static void RestoreAllGameSettings()
         {
-            Log.Information($"Restoring all game settings to original values");
+            Log.Debug($"Checking if restoring all game settings to original values is needed");
             var hasRestored = false;
             if (PluginConfiguration.UiConfigurationOverwritten && PluginConfiguration.OriginalUiConfiguration.TryGetValue(CurrentPlayerContentId, out var charConfig))
             {
@@ -406,7 +417,7 @@ namespace SettingsEnhanced
                 {
                     Title = Strings.Notification_ConfigurationRestored_Title,
                     Content = Strings.Notification_ConfigurationRestored_Content,
-                    HardExpiry = DateTime.Now.AddSeconds(NotificationShowDurationSecs),
+                    HardExpiry = DateTime.Now.AddSeconds(ConfigChangeNotificationShowDurationSecs),
                     Type = NotificationType.Info
                 });
             }

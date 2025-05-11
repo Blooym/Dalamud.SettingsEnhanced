@@ -261,7 +261,7 @@ namespace SettingsEnhanced.Game.Settings
                     var currentValue = prop.GetValue(value);
                     if (value.IsPropertyPersisted(prop) && currentValue is not null)
                     {
-                        Plugin.Log.Verbose($"Serialising persisted property {prop.Name} ({prop.MemberType}) on SystemConfiguration");
+                        Plugin.Log.Verbose($"Serialising persisted property {prop.Name}:{currentValue} ({prop.PropertyType}) on {typeof(SystemConfiguration)}");
                         onlyPersisted.Add(prop.Name, JToken.FromObject(currentValue));
                     }
                 }
@@ -281,7 +281,7 @@ namespace SettingsEnhanced.Game.Settings
                         var value = jproperty.Value.ToObject(property.PropertyType, serializer);
                         existingValue.persistedProperties.Add(property.Name);
                         property.SetValue(existingValue, value);
-                        Plugin.Log.Verbose($"Deserialising persisted property {property.Name} ({property.MemberType}) on SystemConfiguration");
+                        Plugin.Log.Verbose($"Deserialising persisted property {property.Name}:{value} ({property.PropertyType}) on {typeof(SystemConfiguration)}");
                     }
                 }
                 return existingValue;

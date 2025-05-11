@@ -105,4 +105,10 @@
   <data name="UI_Configuration_ZoneConfig_EnumFallback" xml:space="preserve">
     <value>None</value>
   </data>
+  <data name="Notification_BadConfigurationState_Title" xml:space="preserve">
+    <value>Bad Configuration State</value>
+  </data>
+  <data name="Notification_BadConfigurationState_Content" xml:space="preserve">
+    <value>Your game configuration data was not restored properly on last plugin unload. Either your game crashed or something went wrong during plugin unload. Please ensure your settings are still as you expect them to be.</value>
+  </data>
 </root>

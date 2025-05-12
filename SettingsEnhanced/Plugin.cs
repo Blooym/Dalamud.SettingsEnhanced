@@ -230,34 +230,33 @@ namespace SettingsEnhanced
             }
 
             // Modify or restore ui configuration data.
-            PluginConfiguration.OriginalUiConfiguration.TryGetValue(CurrentPlayerContentId, out var originalUiConfig);
-            if (PluginConfiguration.TerritoryUiConfiguration.TryGetValue(territoryId, out var uiConfig))
-            {
-                Log.Information($"{territoryId} has ui settings overrides, applying modified data");
+            // PluginConfiguration.OriginalUiConfiguration.TryGetValue(CurrentPlayerContentId, out var originalUiConfig);
+            // if (PluginConfiguration.TerritoryUiConfiguration.TryGetValue(territoryId, out var uiConfig))
+            // {
+            //     Log.Information($"{territoryId} has ui settings overrides, applying modified data");
 
-                // Safety: Apply base game configuaration before to prevent
-                // multiple overwrites overlapping.
-                if (PluginConfiguration.UiConfigurationOverwritten && originalUiConfig is not null)
-                {
-                    originalUiConfig.ApplyToGame();
-                }
+            //     // Safety: Apply base game configuaration before to prevent
+            //     // multiple overwrites overlapping.
+            //     if (PluginConfiguration.UiConfigurationOverwritten && originalUiConfig is not null)
+            //     {
+            //         originalUiConfig.ApplyToGame();
+            //     }
 
-                // Safety: Must be marked as overwritten before applied.
-                PluginConfiguration.UiConfigurationOverwritten = true;
-                PluginConfiguration.Save();
-                uiConfig.ApplyToGame();
-                applyType = ConfigApplyType.Modified;
-            }
-            else if (PluginConfiguration.UiConfigurationOverwritten && originalUiConfig is not null)
-            {
-                Log.Information($"{territoryId} does not have any ui settings overrides and they are still modified, restoring game defaults");
-                // Safety: Must be restored befored unmarked as overwritten.
-                originalUiConfig.ApplyToGame();
-                PluginConfiguration.UiConfigurationOverwritten = false;
-                PluginConfiguration.Save();
-                applyType = ConfigApplyType.Original;
-            }
-
+            //     // Safety: Must be marked as overwritten before applied.
+            //     PluginConfiguration.UiConfigurationOverwritten = true;
+            //     PluginConfiguration.Save();
+            //     uiConfig.ApplyToGame();
+            //     applyType = ConfigApplyType.Modified;
+            // }
+            // else if (PluginConfiguration.UiConfigurationOverwritten && originalUiConfig is not null)
+            // {
+            //     Log.Information($"{territoryId} does not have any ui settings overrides and they are still modified, restoring game defaults");
+            //     // Safety: Must be restored befored unmarked as overwritten.
+            //     originalUiConfig.ApplyToGame();
+            //     PluginConfiguration.UiConfigurationOverwritten = false;
+            //     PluginConfiguration.Save();
+            //     applyType = ConfigApplyType.Original;
+            // }
 
             // Notify depending on apply type.
             switch (applyType)

@@ -45,13 +45,13 @@ namespace SettingsEnhanced.UI.Windows
                 .Where(x => x.Attribute is not  null)
                 .GroupBy(x => x.Attribute.UiGroup)
                 .OrderBy(g => g.Key)];
-        private static readonly ImmutableArray<IGrouping<string, (PropertyInfo, UiSettingPropDisplayAttribute)>> UiConfigurationGroups =
-            [.. typeof(UiConfiguration)
-                .GetProperties(Plugin.ConfigReflectionBindingFlags)
-                .Select(p => (Property: p, Attribute: p.GetCustomAttribute<UiSettingPropDisplayAttribute>()!))
-                .Where(x => x.Attribute is not  null)
-                .GroupBy(x => x.Attribute.UiGroup)
-                .OrderBy(g => g.Key)];
+        // private static readonly ImmutableArray<IGrouping<string, (PropertyInfo, UiSettingPropDisplayAttribute)>> UiConfigurationGroups =
+        //     [.. typeof(UiConfiguration)
+        //         .GetProperties(Plugin.ConfigReflectionBindingFlags)
+        //         .Select(p => (Property: p, Attribute: p.GetCustomAttribute<UiSettingPropDisplayAttribute>()!))
+        //         .Where(x => x.Attribute is not  null)
+        //         .GroupBy(x => x.Attribute.UiGroup)
+        //         .OrderBy(g => g.Key)];
         private static readonly Dictionary<Type, Dictionary<Enum, string>> EnumAddonTextCache =
             Assembly.GetExecutingAssembly().GetTypes()
                 .Where(t => t.IsEnum)
@@ -267,13 +267,20 @@ namespace SettingsEnhanced.UI.Windows
                                         using var configChild = ImRaii.Child("CharConfigChild");
                                         if (configChild)
                                         {
-                                            foreach (var group in UiConfigurationGroups)
+                                            unsafe
                                             {
-                                                if (ImGui.CollapsingHeader(group.Key))
+                                                using (ImRaii.PushColor(ImGuiCol.Text, *ImGui.GetStyleColorVec4(ImGuiCol.TextDisabled)))
                                                 {
-                                                    this.DrawConfigurationGroup(group, this.selectedItem.UiConfiguration);
+                                                    ImGuiHelpers.SafeTextWrapped("Character configuration changes are currently disabled until a future plugin update. Any existing changes you may have made will not be automatically applied.");
                                                 }
                                             }
+                                            // foreach (var group in UiConfigurationGroups)
+                                            // {
+                                            // if (ImGui.CollapsingHeader(group.Key))
+                                            // {
+                                            // this.DrawConfigurationGroup(group, this.selectedItem.UiConfiguration);
+                                            // }
+                                            // }
                                         }
                                     }
                                 }

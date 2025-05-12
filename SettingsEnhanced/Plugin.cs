@@ -32,12 +32,13 @@ namespace SettingsEnhanced
 
         // Safety: valid from plugin start.
 #pragma warning disable CS8618
-        [PluginService] public static IDalamudPluginInterface PluginInterface { get; set; }
-        [PluginService] public static IClientState ClientState { get; set; }
-        [PluginService] public static IPluginLog Log { get; set; }
-        [PluginService] public static IDataManager DataManager { get; set; }
-        [PluginService] public static IGameConfig GameConfig { get; set; }
-        [PluginService] public static INotificationManager NotificationManager { get; set; }
+        [PluginService] private static IDataManager DataManager { get; set; }
+        [PluginService] private static INotificationManager NotificationManager { get; set; }
+        [PluginService] private static IFramework Framework { get; set; }
+        [PluginService] public static IDalamudPluginInterface PluginInterface { get; private set; }
+        [PluginService] public static IClientState ClientState { get; private set; }
+        [PluginService] public static IPluginLog Log { get; private set; }
+        [PluginService] public static IGameConfig GameConfig { get; private set; }
         private static WindowManager WindowManager { get; set; }
         private static LocalizationManager LocalizationManager { get; set; }
         public static PluginConfiguration PluginConfiguration { get; private set; }
@@ -87,13 +88,14 @@ namespace SettingsEnhanced
         ///     Territories that cannot be used with this plugin regardless of other conditions.
         /// </summary>
         private static readonly uint[] TerritoryIdBlocklist = [];
+        /// <summary>
+        ///     The local player's current territory.
+        /// </summary>
+        private static ushort CurrentPlayerTerritoryId { get; set; }
 
         /// <summary>
         ///     The local player's content id.
         /// </summary>
-        /// <remarks>
-        ///     Handled by the plugin to allow for better logout/shutdown handling when the ID may be cleared from game memory.
-        /// </remarks>
         public static ulong CurrentPlayerContentId { get; private set; }
 
         public Plugin()
@@ -120,48 +122,32 @@ namespace SettingsEnhanced
                 });
             }
 
-            ClientState.Login += this.OnLogin;
-            ClientState.Logout += this.OnLogout;
-            ClientState.TerritoryChanged += this.UpdateGameSettingsForTerritory;
+            Framework.Update += OnFrameworkUpdate;
             GameConfig.SystemChanged += OnSystemConfigUpdated;
-            ConfigurationWindow.ConfigurationUpdated += this.OnConfigurationWindowSave;
+            ConfigurationWindow.ConfigurationUpdated += OnConfigurationWindowSave;
             PluginConfiguration.WriteNewSysConfigOriginalSafe();
-            if (ClientState.IsLoggedIn)
-            {
-                CurrentPlayerContentId = ClientState.LocalContentId;
-                GameConfig.UiConfigChanged += this.OnUiConfigChanged;
-                GameConfig.UiControlChanged += this.OnUiControlChanged;
-                PluginConfiguration.WriteNewUiConfigOriginalSafe(CurrentPlayerContentId);
-                Log.Information($"Plugin enabled whilst player logged in: triggering manual territory update");
-                this.UpdateGameSettingsForTerritory(ClientState.TerritoryType);
-            }
         }
 
         public void Dispose()
         {
+            Framework.Update -= OnFrameworkUpdate;
             GameConfig.SystemChanged -= OnSystemConfigUpdated;
-            GameConfig.UiConfigChanged -= this.OnUiConfigChanged;
-            GameConfig.UiControlChanged -= this.OnUiControlChanged;
-            ClientState.Login -= this.OnLogin;
-            ClientState.Logout -= this.OnLogout;
-            ClientState.TerritoryChanged -= this.UpdateGameSettingsForTerritory;
-            ConfigurationWindow.ConfigurationUpdated -= this.OnConfigurationWindowSave;
+            GameConfig.UiConfigChanged -= OnUiConfigChanged;
+            GameConfig.UiControlChanged -= OnUiControlChanged;
+            ConfigurationWindow.ConfigurationUpdated -= OnConfigurationWindowSave;
             WindowManager.Dispose();
-
-            // Apply the base game settings again.
-            RestoreAllGameSettings();
-
+            RestoreAllGameSettings();   // Apply the base game settings again.
             LocalizationManager.Dispose();
         }
 
         /// <summary>
         ///     Handles setting the current player content id value.
         /// </summary>
-        private void OnLogin()
+        private static void OnLogin()
         {
             CurrentPlayerContentId = ClientState.LocalContentId;
-            GameConfig.UiConfigChanged += this.OnUiConfigChanged;
-            GameConfig.UiControlChanged += this.OnUiControlChanged;
+            GameConfig.UiConfigChanged += OnUiConfigChanged;
+            GameConfig.UiControlChanged += OnUiControlChanged;
             PluginConfiguration.WriteNewUiConfigOriginalSafe(CurrentPlayerContentId);
         }
 
@@ -169,122 +155,40 @@ namespace SettingsEnhanced
         ///     Handles restoring base game settings on logout/game close and unsetting
         ///     the current player content id value.
         /// </summary>
-        private void OnLogout(int type, int code)
+        private static void OnLogout()
         {
             RestoreAllGameSettings();
             CurrentPlayerContentId = 0;
-            GameConfig.UiControlChanged -= this.OnUiControlChanged;
-            GameConfig.UiConfigChanged -= this.OnUiConfigChanged;
+            GameConfig.UiControlChanged -= OnUiControlChanged;
+            GameConfig.UiConfigChanged -= OnUiConfigChanged;
         }
 
-        /// <summary>
-        ///     Manually trigger configuration settings to reapply.
-        /// </summary>
-        private void OnConfigurationWindowSave() => this.UpdateGameSettingsForTerritory(ClientState.TerritoryType);
-
-        /// <summary>
-        ///     Applies specific zone overrides to settings or handles restoring them when leaving overriden zones.
-        /// </summary>
-        /// <param name="territoryId"></param>
-        private void UpdateGameSettingsForTerritory(ushort territoryId)
+        public static void OnFrameworkUpdate(IFramework _)
         {
-            Log.Debug($"Checking if plugin should overwrite or restore game settings data for {territoryId}");
-            var applyType = ConfigApplyType.None;
-
-            // Explicitly remove configurations for territories that aren't allowed.
-            if (EnabledTerritories.All(x => territoryId != x.RowId))
+            // Handle login and logout.
+            var contentId = ClientState.LocalContentId;
+            if (contentId != CurrentPlayerContentId)
             {
-                Log.Warning($"Configuration contains a territory override for {territoryId} which isn't in the allowlist, it will be removed");
-                PluginConfiguration.TerritorySystemConfiguration.Remove(territoryId);
-                PluginConfiguration.TerritorySystemConfiguration.Remove(territoryId);
-                PluginConfiguration.Save();
-            }
-
-
-            // Modify or restore system configuration data.
-            if (PluginConfiguration.TerritorySystemConfiguration.TryGetValue(territoryId, out var systemConfig))
-            {
-                Log.Information($"{territoryId} has system setting overrides, applying modified data");
-
-                // Safety: Apply base game configuaration before to prevent
-                // multiple overwrites overlapping.
-                if (PluginConfiguration.SystemConfigurationOverwritten)
+                if (contentId is 0)
                 {
-                    PluginConfiguration.OriginalSystemConfiguration.ApplyToGame();
+                    OnLogout();
                 }
-
-                // Safety: Must be marked as overwritten before applied.
-                PluginConfiguration.SystemConfigurationOverwritten = true;
-                PluginConfiguration.Save();
-                systemConfig.ApplyToGame();
-                applyType = ConfigApplyType.Modified;
-            }
-            else if (PluginConfiguration.SystemConfigurationOverwritten)
-            {
-                Log.Information($"{territoryId} does not have any system setting overrides and they are still modified, restoring game defaults");
-                // Safety: Must be restored befored unmarked as overwritten.
-                PluginConfiguration.OriginalSystemConfiguration.ApplyToGame();
-                PluginConfiguration.SystemConfigurationOverwritten = false;
-                PluginConfiguration.Save();
-                applyType = ConfigApplyType.Original;
+                else
+                {
+                    OnLogin();
+                }
             }
 
-            // Modify or restore ui configuration data.
-            // PluginConfiguration.OriginalUiConfiguration.TryGetValue(CurrentPlayerContentId, out var originalUiConfig);
-            // if (PluginConfiguration.TerritoryUiConfiguration.TryGetValue(territoryId, out var uiConfig))
-            // {
-            //     Log.Information($"{territoryId} has ui settings overrides, applying modified data");
-
-            //     // Safety: Apply base game configuaration before to prevent
-            //     // multiple overwrites overlapping.
-            //     if (PluginConfiguration.UiConfigurationOverwritten && originalUiConfig is not null)
-            //     {
-            //         originalUiConfig.ApplyToGame();
-            //     }
-
-            //     // Safety: Must be marked as overwritten before applied.
-            //     PluginConfiguration.UiConfigurationOverwritten = true;
-            //     PluginConfiguration.Save();
-            //     uiConfig.ApplyToGame();
-            //     applyType = ConfigApplyType.Modified;
-            // }
-            // else if (PluginConfiguration.UiConfigurationOverwritten && originalUiConfig is not null)
-            // {
-            //     Log.Information($"{territoryId} does not have any ui settings overrides and they are still modified, restoring game defaults");
-            //     // Safety: Must be restored befored unmarked as overwritten.
-            //     originalUiConfig.ApplyToGame();
-            //     PluginConfiguration.UiConfigurationOverwritten = false;
-            //     PluginConfiguration.Save();
-            //     applyType = ConfigApplyType.Original;
-            // }
-
-            // Notify depending on apply type.
-            switch (applyType)
+            // Handle territory change.
+            var territoryId = ClientState.TerritoryType;
+            if (territoryId is not 0 && territoryId != CurrentPlayerTerritoryId)
             {
-                case ConfigApplyType.None:
-                    break;
-                case ConfigApplyType.Original:
-                    NotificationManager.AddNotification(new Notification()
-                    {
-                        Title = Strings.Notification_ConfigurationRestored_Title,
-                        Content = Strings.Notification_ConfigurationRestored_Content,
-                        HardExpiry = DateTime.Now.AddSeconds(ConfigChangeNotificationShowDurationSecs),
-                        Type = NotificationType.Info
-                    });
-                    break;
-                case ConfigApplyType.Modified:
-                    NotificationManager.AddNotification(new Notification()
-                    {
-                        Title = Strings.Notification_ConfigurationModified_Title,
-                        Content = Strings.Notification_ConfigurationModified_Content,
-                        HardExpiry = DateTime.Now.AddSeconds(ConfigChangeNotificationShowDurationSecs),
-                        Type = NotificationType.Info
-                    });
-                    break;
-                default:
-                    break;
+                CurrentPlayerTerritoryId = territoryId;
+                TriggerConfigUpdateWithTerritory(territoryId);
             }
         }
+
+        private static void OnConfigurationWindowSave() => TriggerConfigUpdateWithTerritory(ClientState.TerritoryType);
 
         /// <summary>
         ///     Updates stored original system configuration when configuration is overwritten.
@@ -319,7 +223,7 @@ namespace SettingsEnhanced
         /// <summary>
         ///     Updates stored original ui configuration when configuration is overwritten.
         /// </summary>
-        private void OnUiConfigChanged(object? sender, ConfigChangeEvent e)
+        private static void OnUiConfigChanged(object? _, ConfigChangeEvent e)
         {
             if (CurrentPlayerContentId is 0)
             {
@@ -354,7 +258,7 @@ namespace SettingsEnhanced
         /// <summary>
         ///     Updates stored original ui configuration when configuration is overwritten.
         /// </summary>
-        private void OnUiControlChanged(object? sender, ConfigChangeEvent e)
+        private static void OnUiControlChanged(object? _, ConfigChangeEvent e)
         {
             if (CurrentPlayerContentId is 0)
             {
@@ -383,6 +287,105 @@ namespace SettingsEnhanced
                 Log.Debug($"UiConfiguration saving {option} to original value");
                 PluginConfiguration.OriginalUiConfiguration[CurrentPlayerContentId].SetPropertyValue(updatedOptionProperty, value);
                 PluginConfiguration.Save();
+            }
+        }
+
+        private static void TriggerConfigUpdateWithTerritory(ushort territoryId)
+        {
+            Log.Debug($"Checking if plugin should overwrite or restore game settings data for {territoryId}");
+            var applyType = ConfigApplyType.None;
+
+            // Explicitly remove configurations for territories that aren't allowed.
+            if (EnabledTerritories.All(x => territoryId != x.RowId))
+            {
+                Log.Warning($"Configuration contains a territory override for {territoryId} which isn't in the allowlist, it will be removed");
+                PluginConfiguration.TerritorySystemConfiguration.Remove(territoryId);
+                PluginConfiguration.TerritoryUiConfiguration.Remove(territoryId);
+                PluginConfiguration.Save();
+            }
+
+            // Modify or restore system configuration data.
+            if (PluginConfiguration.TerritorySystemConfiguration.TryGetValue(territoryId, out var systemConfig))
+            {
+                Log.Information($"{territoryId} has system setting overrides, applying modified data");
+
+                // Safety: Apply base game configuaration before to prevent
+                // multiple overwrites overlapping.
+                if (PluginConfiguration.SystemConfigurationOverwritten)
+                {
+                    PluginConfiguration.OriginalSystemConfiguration.ApplyToGame();
+                }
+
+                // Safety: Must be marked as overwritten before applied.
+                PluginConfiguration.SystemConfigurationOverwritten = true;
+                PluginConfiguration.Save();
+                systemConfig.ApplyToGame();
+                applyType = ConfigApplyType.Modified;
+            }
+            else if (PluginConfiguration.SystemConfigurationOverwritten)
+            {
+                Log.Information($"{territoryId} does not have any system setting overrides and they are still modified, restoring game defaults");
+                // Safety: Must be restored befored unmarked as overwritten.
+                PluginConfiguration.OriginalSystemConfiguration.ApplyToGame();
+                PluginConfiguration.SystemConfigurationOverwritten = false;
+                PluginConfiguration.Save();
+                applyType = ConfigApplyType.Original;
+            }
+
+            // Modify or restore ui configuration data.
+            PluginConfiguration.OriginalUiConfiguration.TryGetValue(CurrentPlayerContentId, out var originalUiConfig);
+            if (PluginConfiguration.TerritoryUiConfiguration.TryGetValue(territoryId, out var uiConfig))
+            {
+                Log.Information($"{territoryId} has ui settings overrides, applying modified data");
+
+                // Safety: Apply base game configuaration before to prevent
+                // multiple overwrites overlapping.
+                if (PluginConfiguration.UiConfigurationOverwritten && originalUiConfig is not null)
+                {
+                    originalUiConfig.ApplyToGame();
+                }
+
+                // Safety: Must be marked as overwritten before applied.
+                PluginConfiguration.UiConfigurationOverwritten = true;
+                PluginConfiguration.Save();
+                uiConfig.ApplyToGame();
+                applyType = ConfigApplyType.Modified;
+            }
+            else if (PluginConfiguration.UiConfigurationOverwritten && originalUiConfig is not null)
+            {
+                Log.Information($"{territoryId} does not have any ui settings overrides and they are still modified, restoring game defaults");
+                // Safety: Must be restored befored unmarked as overwritten.
+                originalUiConfig.ApplyToGame();
+                PluginConfiguration.UiConfigurationOverwritten = false;
+                PluginConfiguration.Save();
+                applyType = ConfigApplyType.Original;
+            }
+
+            // Notify depending on apply type.
+            switch (applyType)
+            {
+                case ConfigApplyType.None:
+                    break;
+                case ConfigApplyType.Original:
+                    NotificationManager.AddNotification(new Notification()
+                    {
+                        Title = Strings.Notification_ConfigurationRestored_Title,
+                        Content = Strings.Notification_ConfigurationRestored_Content,
+                        HardExpiry = DateTime.Now.AddSeconds(ConfigChangeNotificationShowDurationSecs),
+                        Type = NotificationType.Info
+                    });
+                    break;
+                case ConfigApplyType.Modified:
+                    NotificationManager.AddNotification(new Notification()
+                    {
+                        Title = Strings.Notification_ConfigurationModified_Title,
+                        Content = Strings.Notification_ConfigurationModified_Content,
+                        HardExpiry = DateTime.Now.AddSeconds(ConfigChangeNotificationShowDurationSecs),
+                        Type = NotificationType.Info
+                    });
+                    break;
+                default:
+                    break;
             }
         }
 

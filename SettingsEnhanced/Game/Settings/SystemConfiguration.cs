@@ -217,31 +217,26 @@ namespace SettingsEnhanced.Game.Settings
             foreach (var prop in typeof(SystemConfiguration).GetProperties(Plugin.ConfigReflectionBindingFlags))
             {
                 var configOptionAttribute = prop.GetCustomAttribute<SystemConfigurationItemAttribute>();
-                if (configOptionAttribute is not null)
+                if (configOptionAttribute is null)
+                    continue;
+                // If a property is not persisted fetch and update its value with an up-to-date value from the game
+                // incase the value we got during serialisation has gone stale.
+                if (!this.IsPropertyPersisted(prop))
                 {
-                    var value = prop.GetValue(this);
-                    if (value is null)
+                    if (GameConfigUtil.TryGetGameConfigValue(configOptionAttribute.ConfigOption, prop.PropertyType, out var refreshedValue))
                     {
-                        continue;
+                        prop.SetValue(this, refreshedValue);
+                        Plugin.Log.Verbose($"Refreshed {prop.Name} with value {refreshedValue} as it was not a persisted value.");
                     }
-                    Plugin.Log.Debug($"Applying {prop.Name}:{value} to game");
-                    if (prop.PropertyType.IsEnum)
-                    {
-                        var enumValue = Convert.ToUInt32(value);
-                        Plugin.GameConfig.Set(configOptionAttribute.ConfigOption, enumValue);
-                    }
-                    if (prop.PropertyType == typeof(uint))
-                    {
-                        Plugin.GameConfig.Set(configOptionAttribute.ConfigOption, (uint)value);
-                    }
-                    else if (prop.PropertyType == typeof(bool))
-                    {
-                        Plugin.GameConfig.Set(configOptionAttribute.ConfigOption, (bool)value);
-                    }
-                    else if (prop.PropertyType == typeof(string))
-                    {
-                        Plugin.GameConfig.Set(configOptionAttribute.ConfigOption, (string)value);
-                    }
+                }
+                if (prop.GetValue(this) is object value)
+                {
+                    GameConfigUtil.SetGameConfigValue(
+                        configOptionAttribute.ConfigOption,
+                        prop.PropertyType,
+                        value
+                    );
+                    Plugin.Log.Debug($"Applied {prop.Name}:{value} to game");
                 }
             }
         }

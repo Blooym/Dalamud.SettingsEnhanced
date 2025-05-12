@@ -44,8 +44,46 @@ namespace SettingsEnhanced.Game.Settings.Util
                     value = stringValue;
                 }
             }
+            else
+            {
+                Plugin.Log.Error($"Failed to read configuration value: no cast registered for valueType of {valueType}");
+                return false;
+            }
             Plugin.Log.Verbose($"TryGetGameConfigValue - ConfigOption: {configOption} ValueType: {valueType} Value: {value}");
             return value is not null;
+        }
+
+        public static void SetGameConfigValue(Enum configOption, Type valueType, object value)
+        {
+            dynamic gameConfigOption = configOption switch
+            {
+                SystemConfigOption sysOption => sysOption,
+                UiConfigOption uiOption => uiOption,
+                UiControlOption uiControlOption => uiControlOption,
+                _ => throw new InvalidOperationException("Unknown type")
+            };
+            Plugin.Log.Verbose($"SetGameConfigValue - ConfigOption: {configOption} ValueType: {valueType} Value: {value}");
+
+            if (valueType.IsEnum)
+            {
+                Plugin.GameConfig.Set(gameConfigOption, Convert.ToUInt32(value));
+            }
+            else if (valueType == typeof(uint))
+            {
+                Plugin.GameConfig.Set(gameConfigOption, (uint)value);
+            }
+            else if (valueType == typeof(bool))
+            {
+                Plugin.GameConfig.Set(gameConfigOption, (bool)value);
+            }
+            else if (valueType == typeof(string))
+            {
+                Plugin.GameConfig.Set(gameConfigOption, (string)value);
+            }
+            else
+            {
+                Plugin.Log.Error($"Failed to set configuration value: no cast registered for valueType of {valueType}");
+            }
         }
     }
 }

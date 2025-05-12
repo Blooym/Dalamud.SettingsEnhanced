@@ -122,19 +122,19 @@ namespace SettingsEnhanced
                 });
             }
 
-            Framework.Update += OnFrameworkUpdate;
-            GameConfig.SystemChanged += OnSystemConfigUpdated;
-            ConfigurationWindow.ConfigurationUpdated += OnConfigurationWindowSave;
+            Framework.Update += this.OnFrameworkUpdate;
+            GameConfig.SystemChanged += this.OnSystemConfigUpdated;
+            ConfigurationWindow.ConfigurationUpdated += this.OnConfigurationWindowSave;
             PluginConfiguration.WriteNewSysConfigOriginalSafe();
         }
 
         public void Dispose()
         {
-            Framework.Update -= OnFrameworkUpdate;
-            GameConfig.SystemChanged -= OnSystemConfigUpdated;
-            GameConfig.UiConfigChanged -= OnUiConfigChanged;
-            GameConfig.UiControlChanged -= OnUiControlChanged;
-            ConfigurationWindow.ConfigurationUpdated -= OnConfigurationWindowSave;
+            Framework.Update -= this.OnFrameworkUpdate;
+            GameConfig.SystemChanged -= this.OnSystemConfigUpdated;
+            GameConfig.UiConfigChanged -= this.OnUiConfigChanged;
+            GameConfig.UiControlChanged -= this.OnUiControlChanged;
+            ConfigurationWindow.ConfigurationUpdated -= this.OnConfigurationWindowSave;
             WindowManager.Dispose();
             RestoreAllGameSettings();   // Apply the base game settings again.
             LocalizationManager.Dispose();
@@ -143,11 +143,11 @@ namespace SettingsEnhanced
         /// <summary>
         ///     Handles setting the current player content id value.
         /// </summary>
-        private static void OnLogin()
+        private void OnLogin()
         {
             CurrentPlayerContentId = ClientState.LocalContentId;
-            GameConfig.UiConfigChanged += OnUiConfigChanged;
-            GameConfig.UiControlChanged += OnUiControlChanged;
+            GameConfig.UiConfigChanged += this.OnUiConfigChanged;
+            GameConfig.UiControlChanged += this.OnUiControlChanged;
             PluginConfiguration.WriteNewUiConfigOriginalSafe(CurrentPlayerContentId);
         }
 
@@ -155,15 +155,15 @@ namespace SettingsEnhanced
         ///     Handles restoring base game settings on logout/game close and unsetting
         ///     the current player content id value.
         /// </summary>
-        private static void OnLogout()
+        private void OnLogout()
         {
             RestoreAllGameSettings();
             CurrentPlayerContentId = 0;
-            GameConfig.UiControlChanged -= OnUiControlChanged;
-            GameConfig.UiConfigChanged -= OnUiConfigChanged;
+            GameConfig.UiControlChanged -= this.OnUiControlChanged;
+            GameConfig.UiConfigChanged -= this.OnUiConfigChanged;
         }
 
-        public static void OnFrameworkUpdate(IFramework _)
+        public void OnFrameworkUpdate(IFramework _)
         {
             // Handle login and logout.
             var contentId = ClientState.LocalContentId;
@@ -171,11 +171,11 @@ namespace SettingsEnhanced
             {
                 if (contentId is 0)
                 {
-                    OnLogout();
+                    this.OnLogout();
                 }
                 else
                 {
-                    OnLogin();
+                    this.OnLogin();
                 }
             }
 
@@ -188,12 +188,12 @@ namespace SettingsEnhanced
             }
         }
 
-        private static void OnConfigurationWindowSave() => TriggerConfigUpdateWithTerritory(ClientState.TerritoryType);
+        private void OnConfigurationWindowSave() => TriggerConfigUpdateWithTerritory(ClientState.TerritoryType);
 
         /// <summary>
         ///     Updates stored original system configuration when configuration is overwritten.
         /// </summary>
-        private static void OnSystemConfigUpdated(object? sender, ConfigChangeEvent e)
+        private void OnSystemConfigUpdated(object? sender, ConfigChangeEvent e)
         {
             // Safety: only handles config options the plugin handles.
             var option = (SystemConfigOption)e.Option;
@@ -223,7 +223,7 @@ namespace SettingsEnhanced
         /// <summary>
         ///     Updates stored original ui configuration when configuration is overwritten.
         /// </summary>
-        private static void OnUiConfigChanged(object? _, ConfigChangeEvent e)
+        private void OnUiConfigChanged(object? _, ConfigChangeEvent e)
         {
             if (CurrentPlayerContentId is 0)
             {
@@ -258,7 +258,7 @@ namespace SettingsEnhanced
         /// <summary>
         ///     Updates stored original ui configuration when configuration is overwritten.
         /// </summary>
-        private static void OnUiControlChanged(object? _, ConfigChangeEvent e)
+        private void OnUiControlChanged(object? _, ConfigChangeEvent e)
         {
             if (CurrentPlayerContentId is 0)
             {

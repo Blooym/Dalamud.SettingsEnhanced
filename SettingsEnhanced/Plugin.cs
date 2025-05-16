@@ -304,10 +304,18 @@ namespace SettingsEnhanced
                 )
             )
             {
-                Log.Warning($"Configuration contains a territory override for {territoryId} which isn't in the allowlist, it will be removed");
+                Log.Warning($"Configuration contains a territory override for {territoryId} which isn't in the allowlist, it will be removed and this event will be ignored.");
                 PluginConfiguration.TerritorySystemConfiguration.Remove(territoryId);
                 PluginConfiguration.TerritoryUiConfiguration.Remove(territoryId);
                 PluginConfiguration.Save();
+                return;
+            }
+
+            // Ignore PvP entirely.
+            if (ClientState.IsPvPExcludingDen)
+            {
+                Log.Warning("Ignoring territory override as the client is currently in PvP.");
+                return;
             }
 
             // Modify or restore system configuration data.

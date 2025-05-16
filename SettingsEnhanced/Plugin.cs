@@ -296,7 +296,13 @@ namespace SettingsEnhanced
             var applyType = ConfigApplyType.None;
 
             // Explicitly remove configurations for territories that aren't allowed.
-            if (EnabledTerritories.All(x => territoryId != x.RowId))
+            if (
+                EnabledTerritories.All(x => territoryId != x.RowId) &&
+                (
+                    PluginConfiguration.TerritorySystemConfiguration.ContainsKey(territoryId) ||
+                    PluginConfiguration.TerritoryUiConfiguration.ContainsKey(territoryId)
+                )
+            )
             {
                 Log.Warning($"Configuration contains a territory override for {territoryId} which isn't in the allowlist, it will be removed");
                 PluginConfiguration.TerritorySystemConfiguration.Remove(territoryId);

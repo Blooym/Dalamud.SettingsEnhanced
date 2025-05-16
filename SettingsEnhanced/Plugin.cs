@@ -297,7 +297,7 @@ namespace SettingsEnhanced
 
             // Explicitly remove configurations for territories that aren't allowed.
             if (
-                EnabledTerritories.All(x => territoryId != x.RowId) &&
+                !EnabledTerritories.Any(x => x.RowId == territoryId) &&
                 (
                     PluginConfiguration.TerritorySystemConfiguration.ContainsKey(territoryId) ||
                     PluginConfiguration.TerritoryUiConfiguration.ContainsKey(territoryId)

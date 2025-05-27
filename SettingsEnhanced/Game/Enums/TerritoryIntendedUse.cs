@@ -9,7 +9,7 @@ namespace SettingsEnhanced.Game.Enums
         VariantDungeon = 4,
         JailArea = 5,
         OpeningArea = 6,
-        BeforeTrialDung = 7,
+        BeforeTrialDungeon = 7,
         AllianceRaid = 8,
         OpenWorldInstanceBattle = 9,
         Trial = 10,
@@ -58,5 +58,6 @@ namespace SettingsEnhanced.Game.Enums
         CriterionDungeonSavage = 58,
         Blunderville = 59,
         CosmicExploration = 60,
+        OccultCrescent = 61,
     }
 }

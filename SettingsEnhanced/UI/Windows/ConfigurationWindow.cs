@@ -240,7 +240,7 @@ namespace SettingsEnhanced.UI.Windows
         {
             if (this.selectedItem is not null)
             {
-                ImGui.TextDisabled(this.selectedItem.TerritoryName);
+                ImGui.TextDisabled($"{this.selectedItem.TerritoryName} - [ID {this.selectedItem.TerritoryId}]");
                 ImGui.Separator();
                 using (var configContentChild = ImRaii.Child("ConfigurationContent", new(default, ImGui.GetContentRegionAvail().Y - (26 * ImGuiHelpers.GlobalScale))))
                 {

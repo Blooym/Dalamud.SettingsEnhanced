@@ -12,7 +12,8 @@ namespace SettingsEnhanced.Game.Extensions
             (uint)TerritoryIntendedUse.AllianceRaid or (uint)TerritoryIntendedUse.Raids or
             (uint)TerritoryIntendedUse.RaidFights or (uint)TerritoryIntendedUse.PalaceOfTheDead or
             (uint)TerritoryIntendedUse.VariantDungeon or (uint)TerritoryIntendedUse.CriterionDungeon or
-            (uint)TerritoryIntendedUse.CriterionDungeonSavage => t.ContentFinderCondition.Value.Name.ExtractText(),
+            (uint)TerritoryIntendedUse.OccultCrescent or (uint)TerritoryIntendedUse.CriterionDungeonSavage or
+            (uint)TerritoryIntendedUse.Bozja or (uint)TerritoryIntendedUse.Eureka => t.ContentFinderCondition.Value.Name.ExtractText(),
             // Fallback
             _ => t.PlaceName.Value.Name.ExtractText(),
         });

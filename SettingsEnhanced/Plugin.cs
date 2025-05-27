@@ -81,13 +81,32 @@ namespace SettingsEnhanced
             (uint)TerritoryIntendedUse.CriterionDungeonSavage,
             (uint)TerritoryIntendedUse.LeapOfFaith,
             (uint)TerritoryIntendedUse.MaskedCarnival,
-            (uint)TerritoryIntendedUse.CosmicExploration
+            (uint)TerritoryIntendedUse.CosmicExploration,
+            (uint)TerritoryIntendedUse.OccultCrescent
         ];
 
         /// <summary>
-        ///     Territories that cannot be used with this plugin regardless of other conditions.
+        ///     Territories to enable manually alongside those inside of EnabledTerritoryUse.
         /// </summary>
-        private static readonly uint[] TerritoryIdBlocklist = [];
+        private static readonly uint[] EnabledTerritoryIds = [
+            1278, // Phantom Village
+            915,  // Gangos
+            886,  // The Firmament
+
+        ];
+
+        /// <summary>
+        ///     Territories that cannot be used with this plugin regardless of if they're included in other lists.
+        /// </summary>
+        /// <remarks>
+        ///     Primarily used for removing duplicate zones and only showing the ones players would actually want to use.
+        /// </remarks>
+        private static readonly uint[] BlockedTerritoryIds = [
+            136, // Duplicate Mist
+            353, // Special Event 1
+            354, // Special Event 2
+        ];
+
         /// <summary>
         ///     The local player's current territory.
         /// </summary>
@@ -101,7 +120,7 @@ namespace SettingsEnhanced
         public Plugin()
         {
             AddonSheet = DataManager.Excel.GetSheet<LuminaSheets.Addon>();
-            EnabledTerritories = [.. DataManager.Excel.GetSheet<LuminaSheets.TerritoryType>().Where(x => !TerritoryIdBlocklist.Contains(x.RowId) && EnabledTerritoryUse.Contains(x.TerritoryIntendedUse.RowId))];
+            EnabledTerritories = [.. DataManager.Excel.GetSheet<LuminaSheets.TerritoryType>().Where(x => !BlockedTerritoryIds.Contains(x.RowId) && (EnabledTerritoryUse.Contains(x.TerritoryIntendedUse.RowId) || EnabledTerritoryIds.Contains(x.RowId)))];
             LocalizationManager = new();
             PluginConfiguration = PluginConfiguration.Load();
             WindowManager = new();

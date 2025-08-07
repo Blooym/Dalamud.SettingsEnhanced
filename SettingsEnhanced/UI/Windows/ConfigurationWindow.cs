@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Config;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
@@ -11,7 +12,6 @@ using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
-using ImGuiNET;
 using SettingsEnhanced.Game.Extensions;
 using SettingsEnhanced.Game.Settings;
 using SettingsEnhanced.Game.Settings.Attributes;
@@ -174,12 +174,12 @@ namespace SettingsEnhanced.UI.Windows
             }
             if (Plugin.PluginConfiguration.UiConfigurationOverwritten || Plugin.PluginConfiguration.SystemConfigurationOverwritten)
             {
-                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudYellow, Strings.UI_Configuration_SettingsType_Zone_Title);
+                ImGui.TextColoredWrapped(ImGuiColors.DalamudYellow, Strings.UI_Configuration_SettingsType_Zone_Title);
                 ImGuiComponents.HelpMarker(Strings.UI_Configuration_SettingsType_Zone_Description, FontAwesomeIcon.QuestionCircle);
             }
             else
             {
-                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.HealerGreen, Strings.UI_Configuration_SettingsType_Game_Title);
+                ImGui.TextColoredWrapped(ImGuiColors.HealerGreen, Strings.UI_Configuration_SettingsType_Game_Title);
                 ImGuiComponents.HelpMarker(Strings.UI_Configuration_SettingsType_Game_Description, FontAwesomeIcon.QuestionCircle);
             }
         }
@@ -440,7 +440,7 @@ namespace SettingsEnhanced.UI.Windows
         {
             if (!EnumAddonTextCache.TryGetValue(prop.PropertyType, out var cacheItem))
             {
-                ImGuiHelpers.SafeTextColoredWrapped(ImGuiColors.DalamudRed, $"Failed to read text cache entry for {prop.PropertyType}");
+                ImGui.TextColoredWrapped(ImGuiColors.DalamudRed, $"Failed to read text cache entry for {prop.PropertyType}");
                 return;
             }
             var enumValue = prop.GetValue(configuration) as Enum;
@@ -467,7 +467,7 @@ namespace SettingsEnhanced.UI.Windows
         {
             var range = prop.GetCustomAttribute<ConfigurationInputRangeAttribute>() ?? new(0, 100);
             var currentValue = (string)(prop.GetValue(configuration) ?? "");
-            if (ImGui.InputText(displayName, ref currentValue, (uint)range.Max) && currentValue.Length > range.Min)
+            if (ImGui.InputText(displayName, ref currentValue, range.Max) && currentValue.Length > range.Min)
             {
                 configuration.SetPropertyValue(prop, currentValue);
                 configuration.PersistProperty(prop);
